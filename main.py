@@ -15,10 +15,23 @@ import json
 import os
 import secrets
 import shutil
+import signal
 import sys
 import time
 import uuid
 from pathlib import Path
+
+# POSIX-only, used for the interactive pty terminal. Render's runtime is Linux,
+# so these are always available in production; guarded at call sites for
+# local dev on non-POSIX platforms.
+try:
+    import pty
+    import fcntl
+    import termios
+    import struct
+    PTY_AVAILABLE = True
+except ImportError:
+    PTY_AVAILABLE = False
 
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect, UploadFile, File, HTTPException, Query
 from fastapi.responses import HTMLResponse, JSONResponse, FileResponse, PlainTextResponse
@@ -328,3 +341,124 @@ async def ws_endpoint(ws: WebSocket):
 
     except WebSocketDisconnect:
         pass
+
+
+# --------------------------------------------------------------------------
+# Interactive terminal (real pty-backed bash) — the "Ubuntu type OS" bit.
+# Each browser tab that opens a terminal gets its own /ws/terminal
+# connection, which forks a real bash login shell attached to a pty.
+# Full readline, tab-completion, job control, vim/htop/etc all work because
+# it IS a real shell, not a one-shot subprocess.
+# --------------------------------------------------------------------------
+
+@app.websocket("/ws/terminal")
+async def ws_terminal(ws: WebSocket):
+    await ws.accept()
+    token = ws.query_params.get("token", "")
+    if not token or not secrets.compare_digest(token, ACCESS_TOKEN):
+        await ws.close(code=4401)
+        return
+
+    if not PTY_AVAILABLE:
+        await ws.send_text("[error] interactive terminal requires a POSIX host (Linux/macOS). Render's runtime is fine; local Windows dev is not.\r\n")
+        await ws.close()
+        return
+
+    shell = shutil.which("bash") or shutil.which("sh") or "/bin/sh"
+
+    pid, fd = pty.fork()
+    if pid == 0:
+        # ---- child process: becomes the shell ----
+        try:
+            os.chdir(str(WORKSPACE))
+        except Exception:
+            pass
+        env = os.environ.copy()
+        env["TERM"] = "xterm-256color"
+        env["PYTHONPATH"] = str(LIBS_DIR)
+        env.setdefault("PS1", r"\u@pyrunner:\w\$ ")
+        try:
+            os.execvpe(shell, [shell, "-l"], env)
+        finally:
+            os._exit(1)
+
+    # ---- parent process: bridge the pty fd <-> websocket ----
+    loop = asyncio.get_event_loop()
+    out_queue: asyncio.Queue = asyncio.Queue()
+
+    def _on_readable():
+        try:
+            data = os.read(fd, 4096)
+        except OSError:
+            data = b""
+        if data:
+            out_queue.put_nowait(data)
+        else:
+            try:
+                loop.remove_reader(fd)
+            except Exception:
+                pass
+            out_queue.put_nowait(None)
+
+    loop.add_reader(fd, _on_readable)
+
+    async def writer_task():
+        while True:
+            chunk = await out_queue.get()
+            if chunk is None:
+                break
+            try:
+                await ws.send_bytes(chunk)
+            except Exception:
+                break
+
+    wtask = asyncio.create_task(writer_task())
+
+    try:
+        while True:
+            msg = await ws.receive()
+            if msg.get("type") == "websocket.disconnect":
+                break
+            text = msg.get("text")
+            if text is not None:
+                try:
+                    payload = json.loads(text)
+                except json.JSONDecodeError:
+                    continue
+                ptype = payload.get("type")
+                if ptype == "input":
+                    data = payload.get("data", "")
+                    try:
+                        os.write(fd, data.encode("utf-8", errors="ignore"))
+                    except OSError:
+                        break
+                elif ptype == "resize":
+                    try:
+                        cols = int(payload.get("cols", 80))
+                        rows = int(payload.get("rows", 24))
+                        winsize = struct.pack("HHHH", rows, cols, 0, 0)
+                        fcntl.ioctl(fd, termios.TIOCSWINSZ, winsize)
+                    except Exception:
+                        pass
+            raw = msg.get("bytes")
+            if raw is not None:
+                try:
+                    os.write(fd, raw)
+                except OSError:
+                    break
+    except WebSocketDisconnect:
+        pass
+    finally:
+        try:
+            loop.remove_reader(fd)
+        except Exception:
+            pass
+        wtask.cancel()
+        try:
+            os.kill(pid, signal.SIGHUP)
+        except ProcessLookupError:
+            pass
+        try:
+            os.close(fd)
+        except OSError:
+            pass

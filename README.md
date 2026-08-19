@@ -3,13 +3,15 @@
 A self-hosted, single-user "cloud IDE" you deploy to Render's **free** web
 service tier. Gives you:
 
-- A dark, terminal-style web UI (file list, editor, output console)
+- **A real interactive terminal** — an actual `bash -l` login shell running
+  in a pty on the container, rendered in-browser with `xterm.js`. Full
+  readline, tab-completion, `Ctrl+C`, `vim`, `htop`, `cd` that persists,
+  command history — it behaves like SSH'ing into a real Ubuntu box, because
+  it is one. Open multiple terminal tabs at once.
+- A dark, tactical file editor (file list, textarea editor, save/run/delete)
 - A `requirements.txt` you edit and install into the instance on demand
-- A **RUN** button that executes the selected `.py` file and streams
-  stdout/stderr live over a WebSocket
-- A raw **shell** input for arbitrary commands in the same workspace
-  (`ls`, `pip list`, `cat`, whatever) — basically a lightweight Ubuntu
-  shell in a browser tab
+- An **INSTALL DEPS** + **RUN** flow that streams `pip install` and script
+  output live over a WebSocket, separate from the terminal
 - Token-gated access (single shared token, not multi-tenant)
 
 It is intentionally minimal: one FastAPI process, one workspace directory,
@@ -49,25 +51,53 @@ uvicorn main:app --reload --port 8000
 
 Open `http://localhost:8000`, paste `devtoken`.
 
-## How execution works
+## How it works
 
+**Terminal tab** — each tab you open makes a new `/ws/terminal` WebSocket
+connection. The server calls `pty.fork()`, the child execs `bash -l` inside
+`WORKSPACE_DIR`, and the parent bridges the pty file descriptor to the
+WebSocket as raw bytes in both directions (keystrokes in, terminal output
+out), including `SIGWINCH`-style resize via `TIOCSWINSZ` when you resize
+the browser window. Closing the tab sends `SIGHUP` to the shell and cleans
+up the fd — no orphaned processes. This is the same technique tools like
+`ttyd`, `gotty`, and Jupyter's `terminado` use.
+
+**Editor tab** — separate, simpler flow over `/ws`:
 - Your code and `requirements.txt` live under `WORKSPACE_DIR`
   (default `/tmp/workspace`).
 - **INSTALL DEPS** runs `pip install --target .pylibs -r requirements.txt`
-  inside the workspace and streams the output.
+  and streams the output.
 - **RUN** executes `python -u <file>` with `PYTHONPATH=.pylibs`, so
   packages you just installed are importable immediately — no venv
   activation dance.
-- Both run through `asyncio.create_subprocess_exec`, with output piped
-  back over the WebSocket line-by-line as it's produced, so long-running
-  scripts (training loops, scrapers, etc.) show live progress instead of
-  a wall of text at the end.
+- Output streams back line-by-line via `asyncio.create_subprocess_exec`,
+  so long-running scripts show live progress instead of a wall of text
+  at the end.
 - A per-process resource cap is applied via `resource.setrlimit` (CPU
   time, address space, open processes, max file size) as a best-effort
-  guard rail — Render's own container limits (512MB RAM on free) are the
-  hard backstop.
-- Only one job runs at a time (a global lock) since the free instance
-  has a single small container behind it.
+  guard rail on `RUN`/`INSTALL DEPS` jobs — Render's own container limits
+  (512MB RAM on free) are the hard backstop. The interactive terminal is
+  *not* resource-capped the same way, since you're driving it directly.
+- Only one `RUN`/`INSTALL DEPS` job runs at a time (a global lock); the
+  terminal tabs run independently of that lock and of each other.
+
+## About `apt-get` / installing system packages
+
+Render's free web service containers run as a **non-root** user at
+runtime, so `sudo apt install` in the terminal won't work — this mirrors
+a real locked-down Ubuntu box, not a bug. Two ways around it if you need
+system-level packages:
+
+1. **Language-level packages**: most things you'd reach for (numpy, torch,
+   ffmpeg-python wrappers, etc.) install fine via `pip` in `requirements.txt`
+   without needing `apt`.
+2. **True system packages**: switch the Render service's runtime from
+   Python to **Docker**, and write a `Dockerfile` that does `apt-get install`
+   at *build* time (which does run as root, since it's building the image).
+   Render still deploys it as a normal free web service — same `render.yaml`
+   shape, just `runtime: docker` instead of `runtime: python` and a
+   `dockerfilePath`. Ask if you want a Dockerfile variant of this project
+   scaffolded out.
 
 ## Known limitations of Render's free tier (by design, not bugs)
 
@@ -98,10 +128,12 @@ Open `http://localhost:8000`, paste `devtoken`.
 ## File layout
 
 ```
-main.py              FastAPI app: auth, file API, websocket exec engine
-templates/index.html UI shell
+main.py              FastAPI app: auth, file API, run/install websocket,
+                      pty-backed terminal websocket
+templates/index.html UI shell (terminal + editor tabs)
 static/style.css     dark tactical styling
-static/app.js         frontend logic (editor, file tree, websocket client)
+static/app.js        frontend logic: xterm.js terminal manager, file tree,
+                      editor run/install websocket client
 requirements.txt     deps for the runner service itself
 render.yaml           Render Blueprint (one-click deploy config)
 ```

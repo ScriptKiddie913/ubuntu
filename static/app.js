@@ -9,6 +9,15 @@
   const connDot = document.getElementById("conn-dot");
   const connLabel = document.getElementById("conn-label");
 
+  const tabTerminalBtn = document.getElementById("tab-terminal-btn");
+  const tabEditorBtn = document.getElementById("tab-editor-btn");
+  const viewTerminal = document.getElementById("view-terminal");
+  const viewEditor = document.getElementById("view-editor");
+
+  const termTabList = document.getElementById("term-tab-list");
+  const termPanes = document.getElementById("term-panes");
+  const newTermBtn = document.getElementById("new-term-btn");
+
   const fileList = document.getElementById("file-list");
   const newFileBtn = document.getElementById("new-file-btn");
   const uploadInput = document.getElementById("upload-input");
@@ -22,36 +31,43 @@
 
   const editReqsBtn = document.getElementById("edit-reqs-btn");
   const installBtn = document.getElementById("install-btn");
-
-  const shellInput = document.getElementById("shell-input");
-  const shellRunBtn = document.getElementById("shell-run-btn");
   const killBtn = document.getElementById("kill-btn");
 
-  const terminal = document.getElementById("terminal");
+  const runOutput = document.getElementById("run-output");
 
   let token = localStorage.getItem("pyrunner_token") || "";
-  let ws = null;
+  let runWs = null;
   let currentFile = "main.py";
-  let busy = false;
 
   function log(text) {
-    terminal.textContent += text;
-    terminal.scrollTop = terminal.scrollHeight;
+    runOutput.textContent += text;
+    runOutput.scrollTop = runOutput.scrollHeight;
   }
-  function clearLog() { terminal.textContent = ""; }
+  function clearLog() { runOutput.textContent = ""; }
 
   function setConn(state) {
     connDot.className = "dot " + (state === "on" ? "dot-on" : state === "busy" ? "dot-busy" : "dot-off");
     connLabel.textContent = state === "on" ? "connected" : state === "busy" ? "running..." : "disconnected";
   }
 
-  function setBusy(b) {
-    busy = b;
-    setConn(b ? "busy" : (ws && ws.readyState === WebSocket.OPEN ? "on" : "off"));
-    runBtn.disabled = b;
-    installBtn.disabled = b;
-    shellRunBtn.disabled = b;
+  // ---------------- view tab switching ----------------
+
+  function showTerminalView() {
+    viewTerminal.classList.remove("hidden");
+    viewEditor.classList.add("hidden");
+    tabTerminalBtn.classList.add("active");
+    tabEditorBtn.classList.remove("active");
+    const active = terminals.find((t) => t.id === activeTermId);
+    if (active) { active.fitAddon.fit(); active.term.focus(); }
   }
+  function showEditorView() {
+    viewEditor.classList.remove("hidden");
+    viewTerminal.classList.add("hidden");
+    tabEditorBtn.classList.add("active");
+    tabTerminalBtn.classList.remove("active");
+  }
+  tabTerminalBtn.addEventListener("click", showTerminalView);
+  tabEditorBtn.addEventListener("click", showEditorView);
 
   // ---------------- auth ----------------
 
@@ -62,12 +78,17 @@
 
   async function boot() {
     if (token && await tryToken(token)) {
-      authScreen.classList.add("hidden");
-      app.classList.remove("hidden");
-      connectWs();
-      await refreshFiles();
-      await loadFile("main.py");
+      enterApp();
     }
+  }
+
+  async function enterApp() {
+    authScreen.classList.add("hidden");
+    app.classList.remove("hidden");
+    connectRunWs();
+    await refreshFiles();
+    await loadFile("main.py");
+    openTerminal();
   }
 
   tokenSubmit.addEventListener("click", async () => {
@@ -78,11 +99,7 @@
       token = t;
       localStorage.setItem("pyrunner_token", token);
       authError.textContent = "";
-      authScreen.classList.add("hidden");
-      app.classList.remove("hidden");
-      connectWs();
-      await refreshFiles();
-      await loadFile("main.py");
+      enterApp();
     } else {
       authError.textContent = "invalid token";
     }
@@ -94,29 +111,29 @@
     location.reload();
   });
 
-  // ---------------- websocket ----------------
+  // ---------------- run/install websocket (editor panel) ----------------
 
-  function connectWs() {
+  function connectRunWs() {
     const proto = location.protocol === "https:" ? "wss:" : "ws:";
-    ws = new WebSocket(`${proto}//${location.host}/ws?token=${encodeURIComponent(token)}`);
-    ws.onopen = () => setConn("on");
-    ws.onclose = () => { setConn("off"); setTimeout(connectWs, 2000); };
-    ws.onerror = () => setConn("off");
-    ws.onmessage = (evt) => {
+    runWs = new WebSocket(`${proto}//${location.host}/ws?token=${encodeURIComponent(token)}`);
+    runWs.onopen = () => setConn("on");
+    runWs.onclose = () => { setConn("off"); setTimeout(connectRunWs, 2000); };
+    runWs.onerror = () => setConn("off");
+    runWs.onmessage = (evt) => {
       const msg = JSON.parse(evt.data);
       if (msg.type === "output") {
         log(msg.data);
       } else if (msg.type === "done") {
-        log(`\n[exit code ${msg.code}${msg.elapsed ? ", " + msg.elapsed + "s" : ""}]\n`);
-        setBusy(false);
+        log(`\n[exit code ${msg.code}${msg.elapsed !== undefined ? ", " + msg.elapsed + "s" : ""}]\n`);
+        setConn("on");
       }
     };
   }
 
-  function send(obj) {
-    if (!ws || ws.readyState !== WebSocket.OPEN) { log("[error] not connected\n"); return; }
-    setBusy(true);
-    ws.send(JSON.stringify(obj));
+  function sendRun(obj) {
+    if (!runWs || runWs.readyState !== WebSocket.OPEN) { log("[error] not connected\n"); return; }
+    setConn("busy");
+    runWs.send(JSON.stringify(obj));
   }
 
   // ---------------- files ----------------
@@ -129,7 +146,7 @@
       const li = document.createElement("li");
       li.textContent = f.path;
       if (f.path === currentFile) li.classList.add("active");
-      li.addEventListener("click", () => loadFile(f.path));
+      li.addEventListener("click", () => { loadFile(f.path); showEditorView(); });
       fileList.appendChild(li);
     });
   }
@@ -163,6 +180,7 @@
     currentPathInput.value = name;
     editor.value = "";
     editor.focus();
+    showEditorView();
   });
 
   deleteBtn.addEventListener("click", async () => {
@@ -194,12 +212,9 @@
     uploadInput.value = "";
   });
 
-  editReqsBtn.addEventListener("click", () => loadFile("requirements.txt"));
-
-  // ---------------- run / install / shell ----------------
+  editReqsBtn.addEventListener("click", () => { loadFile("requirements.txt"); showEditorView(); });
 
   runBtn.addEventListener("click", async () => {
-    // auto-save current file before running
     const path = currentPathInput.value.trim();
     await fetch(`/api/file?token=${encodeURIComponent(token)}`, {
       method: "POST",
@@ -207,26 +222,16 @@
       body: JSON.stringify({ path, content: editor.value }),
     });
     clearLog();
-    send({ type: "run_python", file: path });
+    sendRun({ type: "run_python", file: path });
   });
 
   installBtn.addEventListener("click", () => {
     clearLog();
-    send({ type: "install_requirements" });
+    sendRun({ type: "install_requirements" });
   });
 
-  shellRunBtn.addEventListener("click", () => {
-    const cmd = shellInput.value.trim();
-    if (!cmd) return;
-    clearLog();
-    send({ type: "shell", cmd });
-    shellInput.value = "";
-  });
-  shellInput.addEventListener("keydown", (e) => { if (e.key === "Enter") shellRunBtn.click(); });
+  killBtn.addEventListener("click", () => sendRun({ type: "kill" }));
 
-  killBtn.addEventListener("click", () => send({ type: "kill" }));
-
-  // tab support in editor
   editor.addEventListener("keydown", (e) => {
     if (e.key === "Tab") {
       e.preventDefault();
@@ -234,6 +239,116 @@
       editor.value = editor.value.slice(0, start) + "    " + editor.value.slice(end);
       editor.selectionStart = editor.selectionEnd = start + 4;
     }
+  });
+
+  // ---------------- interactive terminal (xterm.js + pty over websocket) ----------------
+
+  const terminals = []; // { id, term, fitAddon, ws, tabEl, paneEl }
+  let activeTermId = null;
+  let termCounter = 0;
+
+  function openTerminal() {
+    const id = ++termCounter;
+
+    const tabEl = document.createElement("div");
+    tabEl.className = "term-tab";
+    tabEl.innerHTML = `<span class="term-tab-label">term ${id}</span><span class="term-tab-close">✕</span>`;
+    tabEl.addEventListener("click", (e) => {
+      if (e.target.classList.contains("term-tab-close")) {
+        closeTerminal(id);
+      } else {
+        activateTerminal(id);
+      }
+    });
+    termTabList.appendChild(tabEl);
+
+    const paneEl = document.createElement("div");
+    paneEl.className = "term-pane";
+    termPanes.appendChild(paneEl);
+
+    const term = new Terminal({
+      cursorBlink: true,
+      fontFamily: "'JetBrains Mono', 'Fira Code', Consolas, monospace",
+      fontSize: 13,
+      theme: {
+        background: "#000000",
+        foreground: "#d8d8dc",
+        cursor: "#00e08a",
+        selectionBackground: "#2a2a2e",
+      },
+    });
+    const fitAddon = new FitAddon.FitAddon();
+    term.loadAddon(fitAddon);
+    term.open(paneEl);
+
+    const proto = location.protocol === "https:" ? "wss:" : "ws:";
+    const ws = new WebSocket(`${proto}//${location.host}/ws/terminal?token=${encodeURIComponent(token)}`);
+    ws.binaryType = "arraybuffer";
+
+    ws.onopen = () => {
+      fitAddon.fit();
+      sendResize();
+    };
+    ws.onmessage = (evt) => {
+      if (evt.data instanceof ArrayBuffer) {
+        term.write(new Uint8Array(evt.data));
+      } else {
+        term.write(evt.data);
+      }
+    };
+    ws.onclose = () => term.write("\r\n\x1b[31m[terminal session ended]\x1b[0m\r\n");
+
+    term.onData((data) => {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: "input", data }));
+      }
+    });
+
+    function sendResize() {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: "resize", cols: term.cols, rows: term.rows }));
+      }
+    }
+    term.onResize(sendResize);
+
+    const entry = { id, term, fitAddon, ws, tabEl, paneEl };
+    terminals.push(entry);
+    activateTerminal(id);
+  }
+
+  function activateTerminal(id) {
+    activeTermId = id;
+    terminals.forEach((t) => {
+      const isActive = t.id === id;
+      t.tabEl.classList.toggle("active", isActive);
+      t.paneEl.classList.toggle("active", isActive);
+      if (isActive) {
+        setTimeout(() => { t.fitAddon.fit(); t.term.focus(); }, 0);
+      }
+    });
+  }
+
+  function closeTerminal(id) {
+    const idx = terminals.findIndex((t) => t.id === id);
+    if (idx === -1) return;
+    const entry = terminals[idx];
+    try { entry.ws.close(); } catch (e) {}
+    entry.term.dispose();
+    entry.tabEl.remove();
+    entry.paneEl.remove();
+    terminals.splice(idx, 1);
+    if (terminals.length === 0) {
+      openTerminal();
+    } else if (activeTermId === id) {
+      activateTerminal(terminals[terminals.length - 1].id);
+    }
+  }
+
+  newTermBtn.addEventListener("click", openTerminal);
+
+  window.addEventListener("resize", () => {
+    const active = terminals.find((t) => t.id === activeTermId);
+    if (active) active.fitAddon.fit();
   });
 
   boot();

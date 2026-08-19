@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>PYRUNNER // remote exec console</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/xterm/5.3.0/css/xterm.min.css" />
 <link rel="stylesheet" href="/static/style.css" />
 </head>
 <body>
@@ -44,33 +45,46 @@
     </aside>
 
     <main class="main">
-      <div class="editor-bar">
-        <input id="current-path" class="current-path" value="main.py" />
-        <button id="save-btn">SAVE</button>
-        <button id="run-btn" class="primary">RUN ▶</button>
-        <button id="download-btn">DL</button>
-        <button id="delete-btn" class="danger">DEL</button>
-      </div>
-      <textarea id="editor" spellcheck="false"></textarea>
-
-      <div class="reqs-bar">
-        <span class="reqs-label">requirements.txt</span>
-        <button id="edit-reqs-btn">EDIT</button>
-        <button id="install-btn">INSTALL DEPS ⇩</button>
+      <div class="view-tabs">
+        <button id="tab-terminal-btn" class="view-tab active">TERMINAL</button>
+        <button id="tab-editor-btn" class="view-tab">EDITOR</button>
       </div>
 
-      <div class="shell-bar">
-        <span class="shell-prompt">$</span>
-        <input id="shell-input" placeholder="run a shell command in the workspace (ls, cat, pip list, ...)" autocomplete="off" />
-        <button id="shell-run-btn">EXEC</button>
-        <button id="kill-btn" class="danger">KILL</button>
-      </div>
+      <!-- ==================== TERMINAL VIEW ==================== -->
+      <section id="view-terminal" class="view">
+        <div class="term-tabbar">
+          <div id="term-tab-list" class="term-tab-list"></div>
+          <button id="new-term-btn" title="new terminal">+ NEW</button>
+        </div>
+        <div id="term-panes" class="term-panes"></div>
+      </section>
 
-      <pre id="terminal" class="terminal"></pre>
+      <!-- ==================== EDITOR VIEW ==================== -->
+      <section id="view-editor" class="view hidden">
+        <div class="editor-bar">
+          <input id="current-path" class="current-path" value="main.py" />
+          <button id="save-btn">SAVE</button>
+          <button id="run-btn" class="primary">RUN ▶</button>
+          <button id="download-btn">DL</button>
+          <button id="delete-btn" class="danger">DEL</button>
+        </div>
+        <textarea id="editor" spellcheck="false"></textarea>
+
+        <div class="reqs-bar">
+          <span class="reqs-label">requirements.txt</span>
+          <button id="edit-reqs-btn">EDIT</button>
+          <button id="install-btn">INSTALL DEPS ⇩</button>
+          <button id="kill-btn" class="danger">KILL</button>
+        </div>
+
+        <pre id="run-output" class="terminal"></pre>
+      </section>
     </main>
   </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xterm/5.3.0/lib/xterm.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xterm-addon-fit/0.8.0/lib/xterm-addon-fit.min.js"></script>
 <script src="/static/app.js"></script>
 </body>
 </html>

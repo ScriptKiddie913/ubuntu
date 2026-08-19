@@ -147,6 +147,62 @@ input:focus { outline: none; border-color: var(--accent); }
 
 .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 
+/* ---- view tabs (Terminal / Editor) ---- */
+.view-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-panel);
+}
+.view-tab {
+  border: none;
+  border-right: 1px solid var(--border);
+  border-radius: 0;
+  background: transparent;
+  color: var(--text-dim);
+  padding: 10px 20px;
+  letter-spacing: 0.08em;
+}
+.view-tab.active { color: var(--accent); background: var(--bg-panel-2); border-bottom: 2px solid var(--accent); }
+.view { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.view.hidden { display: none; }
+
+/* ---- interactive terminal panes ---- */
+.term-tabbar {
+  display: flex;
+  align-items: center;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+  padding: 4px 8px;
+  gap: 4px;
+}
+.term-tab-list { display: flex; gap: 4px; flex: 1; overflow-x: auto; }
+.term-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px;
+  font-size: 11px;
+  color: var(--text-dim);
+  background: var(--bg-panel-2);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.term-tab.active { color: var(--accent); border-color: var(--accent); }
+.term-tab .term-tab-close { color: var(--text-dim); }
+.term-tab .term-tab-close:hover { color: var(--danger); }
+#new-term-btn { padding: 5px 10px; }
+
+.term-panes { flex: 1; min-height: 0; position: relative; background: #000; }
+.term-pane {
+  position: absolute;
+  inset: 0;
+  padding: 8px;
+  display: none;
+}
+.term-pane.active { display: block; }
+.xterm { height: 100%; }
+
 .editor-bar, .reqs-bar, .shell-bar {
   display: flex;
   align-items: center;
