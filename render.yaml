@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: multidrive-pool
+    runtime: python
+    plan: starter          # free tier has no persistent disk — see README
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: REDIRECT_URI
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: multidrive-db
+          property: connectionString
+      - key: CHUNK_SIZE_BYTES
+        value: "3221225472"   # 3GB
+      - key: SAFETY_MARGIN_BYTES
+        value: "209715200"    # 200MB
+
+databases:
+  - name: multidrive-db
+    plan: free
