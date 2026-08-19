@@ -7,6 +7,7 @@ const requireAuth = require('./src/middleware/requireAuth');
 const authRoutes = require('./src/routes/auth');
 const accountRoutes = require('./src/routes/accounts');
 const fileRoutes = require('./src/routes/files');
+const publicShareRoutes = require('./src/routes/publicShare');
 
 for (const name of ['ADMIN_PASSWORD', 'MASTER_KEY', 'SESSION_SECRET']) {
   if (!process.env[name]) {
@@ -36,6 +37,7 @@ app.use(
 app.use('/api/auth', authRoutes);
 app.use('/api/accounts', requireAuth, accountRoutes);
 app.use('/api/files', requireAuth, fileRoutes);
+app.use('/share', publicShareRoutes); // intentionally NOT behind requireAuth — this is the public link surface
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.get('*', (req, res) => {

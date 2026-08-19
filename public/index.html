@@ -30,6 +30,7 @@
         <h2>Combined storage</h2>
         <button id="add-account-btn" class="secondary">+ Add MEGA account</button>
       </div>
+      <p class="muted">Accounts are permanent once added — there's no remove button by design, since files may have pieces stored on any account at any time.</p>
       <div class="pool-bar-wrap">
         <div class="pool-bar"><div id="pool-bar-fill" class="pool-bar-fill"></div></div>
         <div id="pool-summary-text" class="muted"></div>
@@ -63,6 +64,40 @@
       <p id="no-files-msg" class="muted hidden">No files yet — upload something above.</p>
     </section>
   </main>
+</div>
+
+<div id="share-modal" class="modal hidden">
+  <div class="modal-card">
+    <h2>Share file</h2>
+    <div id="share-modal-create">
+      <p class="muted">Anyone with this link can download the file — no login needed.</p>
+      <label class="muted" for="share-expiry">Link expires</label>
+      <select id="share-expiry">
+        <option value="never">Never</option>
+        <option value="1h">1 hour</option>
+        <option value="1d">1 day</option>
+        <option value="7d">7 days</option>
+        <option value="30d">30 days</option>
+      </select>
+      <div class="modal-actions">
+        <button type="button" id="cancel-share" class="ghost">Cancel</button>
+        <button type="button" id="create-share-btn">Create link</button>
+      </div>
+    </div>
+    <div id="share-modal-result" class="hidden">
+      <p class="muted">Link ready:</p>
+      <div class="share-link-row">
+        <input id="share-link-output" type="text" readonly />
+        <button type="button" id="copy-share-link" class="secondary">Copy</button>
+      </div>
+      <p id="share-expiry-note" class="muted"></p>
+      <div class="modal-actions">
+        <button type="button" id="revoke-share-btn" class="ghost danger-text">Revoke link</button>
+        <button type="button" id="close-share-modal">Done</button>
+      </div>
+    </div>
+    <p id="share-modal-error" class="error hidden"></p>
+  </div>
 </div>
 
 <div id="add-account-modal" class="modal hidden">

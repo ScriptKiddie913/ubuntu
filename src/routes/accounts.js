@@ -1,5 +1,4 @@
 const express = require('express');
-const db = require('../db');
 const megaAccounts = require('../megaAccounts');
 
 const router = express.Router();
@@ -25,21 +24,10 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.delete('/:label', async (req, res) => {
-  const { label } = req.params;
-  const inUse = db.read().files.some((f) => f.chunks.some((c) => c.label === label));
-  if (inUse && req.query.force !== 'true') {
-    return res.status(409).json({
-      error:
-        'This account still holds pieces of one or more files. Delete those files first, or resend with ?force=true to remove the account anyway (those files will become unrecoverable).',
-    });
-  }
-  try {
-    await megaAccounts.removeAccount(label);
-    res.json({ ok: true });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+// Intentionally no DELETE route: once an account is added to the pool it stays part of it
+// permanently, since files may have chunks placed on it at any time. Removing an account
+// mid-flight risks silently orphaning pieces of files. If an account genuinely needs to go
+// (e.g. it was compromised), do it by editing data/db.json directly and manually re-uploading
+// any files that had chunks there — this is a deliberate, not a one-click, action.
 
 module.exports = router;

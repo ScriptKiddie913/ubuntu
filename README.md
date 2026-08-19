@@ -18,8 +18,12 @@ Built with Node.js + Express, plain HTML/CSS/JS (no build step), and the unoffic
   be, mostly to keep individual uploads more resumable/reliable over flaky connections.
   Raise it (e.g. to something close to your smallest account's size) if you'd rather have
   fewer, bigger, whole-file uploads and don't mind longer single transfers.
-- Deleting a file removes every piece from every account it touched. Deleting an account
-  that still holds live pieces of a file is blocked unless you pass `?force=true`.
+- Deleting a file removes every piece from every account it touched. **Accounts
+  themselves can never be removed from the dashboard once added** — there's no delete
+  endpoint or button, on purpose, since a file's chunks can land on any account at any
+  time and a mid-flight removal risks silently orphaning pieces of files. If an account
+  genuinely has to go (compromised, etc.), that's a manual `data/db.json` edit plus
+  re-uploading anything that had chunks there — deliberately not a one-click action.
 
 ## 1. Get the code running locally
 

@@ -39,20 +39,8 @@ async function addAccount({ label, email, password, secondFactorCode }) {
   return { label, email };
 }
 
-async function removeAccount(label) {
-  const session = sessions.get(label);
-  if (session) {
-    try {
-      session.storage.close();
-    } catch (_) {
-      /* ignore */
-    }
-    sessions.delete(label);
-  }
-  await db.mutate((data) => {
-    data.accounts = data.accounts.filter((a) => a.label !== label);
-  });
-}
+// Note: there is deliberately no removeAccount function. Once an account joins the pool it
+// stays part of it permanently — see the comment in src/routes/accounts.js for why.
 
 async function getSession(label) {
   const cached = sessions.get(label);
@@ -144,7 +132,6 @@ async function getPoolSummary() {
 
 module.exports = {
   addAccount,
-  removeAccount,
   getSession,
   reloginAccount,
   getQuota,

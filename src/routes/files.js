@@ -6,25 +6,40 @@ const { nanoid } = require('nanoid');
 const db = require('../db');
 const megaAccounts = require('../megaAccounts');
 const { planPlacement } = require('../placement');
+const { sendFileDownload, isShareActive } = require('../fileStreamer');
 
 const router = express.Router();
 const CHUNK_MAX_BYTES = Number(process.env.CHUNK_MAX_BYTES) || 4 * 1024 * 1024 * 1024; // 4GB default
 
+const EXPIRY_OPTIONS_HOURS = { '1h': 1, '1d': 24, '7d': 24 * 7, '30d': 24 * 30 }; // 'never' = no expiry
+
 const upload = multer({ dest: os.tmpdir() });
+
+function shareUrl(req, token) {
+  return `${req.protocol}://${req.get('host')}/share/${token}`;
+}
+
+function toPublicRecord(f, req) {
+  const share = isShareActive(f.share)
+    ? { url: shareUrl(req, f.share.token), expiresAt: f.share.expiresAt || null }
+    : null;
+  return {
+    id: f.id,
+    name: f.name,
+    size: f.size,
+    createdAt: f.createdAt,
+    chunkCount: f.chunks.length,
+    accounts: [...new Set(f.chunks.map((c) => c.label))],
+    share,
+  };
+}
 
 router.get('/', (req, res) => {
   const { files } = db.read();
   const list = files
     .slice()
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-    .map((f) => ({
-      id: f.id,
-      name: f.name,
-      size: f.size,
-      createdAt: f.createdAt,
-      chunkCount: f.chunks.length,
-      accounts: [...new Set(f.chunks.map((c) => c.label))],
-    }));
+    .map((f) => toPublicRecord(f, req));
   res.json({ files: list });
 });
 
@@ -75,19 +90,13 @@ router.post('/', upload.single('file'), async (req, res) => {
       size: fileSize,
       createdAt: new Date().toISOString(),
       chunks: uploadedChunks,
+      share: null,
     };
     await db.mutate((data) => {
       data.files.push(record);
     });
 
-    res.status(201).json({
-      id: record.id,
-      name: record.name,
-      size: record.size,
-      createdAt: record.createdAt,
-      chunkCount: record.chunks.length,
-      accounts: [...new Set(record.chunks.map((c) => c.label))],
-    });
+    res.status(201).json(toPublicRecord(record, req));
   } catch (err) {
     console.error('[upload] failed:', err);
     // Best-effort cleanup of whatever chunks did make it to MEGA before the failure.
@@ -112,26 +121,7 @@ router.get('/:id/download', async (req, res) => {
   if (!record) return res.status(404).json({ error: 'File not found.' });
 
   try {
-    res.setHeader('Content-Type', 'application/octet-stream');
-    res.setHeader('Content-Length', String(record.size));
-    res.setHeader(
-      'Content-Disposition',
-      `attachment; filename="${asciiFallback(record.name)}"; filename*=UTF-8''${encodeURIComponent(
-        record.name
-      )}`
-    );
-
-    const orderedChunks = record.chunks.slice().sort((a, b) => a.part - b.part);
-    for (const chunk of orderedChunks) {
-      if (chunk.size === 0) continue; // nothing to stream for an empty chunk
-      const storage = await megaAccounts.getSession(chunk.label);
-      const megaFile = storage.files[chunk.nodeId];
-      if (!megaFile) {
-        throw new Error(`Missing chunk on MEGA account "${chunk.label}" (node ${chunk.nodeId}).`);
-      }
-      await streamChunk(megaFile, res);
-    }
-    res.end();
+    await sendFileDownload(record, res);
   } catch (err) {
     console.error('[download] failed:', err);
     if (!res.headersSent) res.status(500).json({ error: err.message });
@@ -162,17 +152,41 @@ router.delete('/:id', async (req, res) => {
   res.json({ ok: true, warnings: warnings.length ? warnings : undefined });
 });
 
-function streamChunk(megaFile, res) {
-  return new Promise((resolve, reject) => {
-    const stream = megaFile.download();
-    stream.on('error', reject);
-    stream.on('end', resolve);
-    stream.pipe(res, { end: false });
-  });
-}
+// Create (or replace) a public share link for a file.
+// body: { expiry: '1h' | '1d' | '7d' | '30d' | 'never' } — defaults to 'never'.
+router.post('/:id/share', async (req, res) => {
+  const { files } = db.read();
+  const record = files.find((f) => f.id === req.params.id);
+  if (!record) return res.status(404).json({ error: 'File not found.' });
 
-function asciiFallback(name) {
-  return name.replace(/[^\x20-\x7E]/g, '_').replace(/"/g, "'");
-}
+  const expiry = (req.body && req.body.expiry) || 'never';
+  let expiresAt = null;
+  if (expiry !== 'never') {
+    const hours = EXPIRY_OPTIONS_HOURS[expiry];
+    if (!hours) return res.status(400).json({ error: 'Invalid expiry option.' });
+    expiresAt = new Date(Date.now() + hours * 60 * 60 * 1000).toISOString();
+  }
+
+  const token = nanoid(28);
+  await db.mutate((data) => {
+    const rec = data.files.find((f) => f.id === req.params.id);
+    rec.share = { token, createdAt: new Date().toISOString(), expiresAt };
+  });
+
+  res.status(201).json({ url: shareUrl(req, token), expiresAt });
+});
+
+router.delete('/:id/share', async (req, res) => {
+  const { files } = db.read();
+  const record = files.find((f) => f.id === req.params.id);
+  if (!record) return res.status(404).json({ error: 'File not found.' });
+
+  await db.mutate((data) => {
+    const rec = data.files.find((f) => f.id === req.params.id);
+    rec.share = null;
+  });
+
+  res.json({ ok: true });
+});
 
 module.exports = router;

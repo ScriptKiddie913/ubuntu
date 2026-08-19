@@ -80,31 +80,15 @@ async function loadAccounts() {
     const accPct = acc.spaceTotal ? Math.min(100, (acc.spaceUsed / acc.spaceTotal) * 100) : 0;
     card.innerHTML = `
       <div class="acc-label">${escapeHtml(acc.label)}</div>
-      <div class="acc-email">${escapeHtml(acc.email)}</div>
       ${
         acc.status === 'error'
           ? `<div class="error">${escapeHtml(acc.error || 'connection error')}</div>`
           : `<div class="mini-bar"><div class="mini-bar-fill" style="width:${accPct}%"></div></div>
              <div class="muted">${formatBytes(acc.spaceUsed)} / ${formatBytes(acc.spaceTotal)}</div>`
       }
-      <div class="acc-actions">
-        <span></span>
-        <button data-label="${escapeHtml(acc.label)}" class="remove-acc-btn">Remove</button>
-      </div>
     `;
     list.appendChild(card);
   }
-  list.querySelectorAll('.remove-acc-btn').forEach((btn) => {
-    btn.addEventListener('click', async () => {
-      if (!confirm(`Remove account "${btn.dataset.label}" from the pool?`)) return;
-      try {
-        await api(`/api/accounts/${encodeURIComponent(btn.dataset.label)}`, { method: 'DELETE' });
-        loadAccounts();
-      } catch (err) {
-        alert(err.message);
-      }
-    });
-  });
 }
 
 el('add-account-btn').addEventListener('click', () => el('add-account-modal').classList.remove('hidden'));
@@ -143,12 +127,16 @@ async function loadFiles() {
   for (const f of files) {
     const tr = document.createElement('tr');
     const spread = f.accounts.map((a) => `<span class="chip">${escapeHtml(a)}</span>`).join('');
+    const shareBtn = f.share
+      ? `<button data-id="${f.id}" class="share-btn link-btn">Link ready</button>`
+      : `<button data-id="${f.id}" class="share-btn secondary">Share</button>`;
     tr.innerHTML = `
       <td>${escapeHtml(f.name)}</td>
       <td>${formatBytes(f.size)}</td>
       <td>${spread}${f.chunkCount > f.accounts.length ? `<span class="chip">${f.chunkCount} parts</span>` : ''}</td>
       <td>${new Date(f.createdAt).toLocaleString()}</td>
       <td class="actions">
+        ${shareBtn}
         <button data-id="${f.id}" class="dl-btn secondary">Download</button>
         <button data-id="${f.id}" class="del-btn">Delete</button>
       </td>
@@ -173,7 +161,87 @@ async function loadFiles() {
       }
     });
   });
+  tbody.querySelectorAll('.share-btn').forEach((btn) => {
+    btn.addEventListener('click', () => openShareModal(btn.dataset.id, files.find((f) => f.id === btn.dataset.id)));
+  });
 }
+
+// ---------- Sharing ----------
+
+let currentShareFileId = null;
+
+function openShareModal(fileId, fileRecord) {
+  currentShareFileId = fileId;
+  el('share-modal-error').classList.add('hidden');
+  el('share-modal').classList.remove('hidden');
+
+  if (fileRecord && fileRecord.share) {
+    showShareResult(fileRecord.share.url, fileRecord.share.expiresAt);
+  } else {
+    el('share-modal-create').classList.remove('hidden');
+    el('share-modal-result').classList.add('hidden');
+  }
+}
+
+function showShareResult(url, expiresAt) {
+  el('share-modal-create').classList.add('hidden');
+  el('share-modal-result').classList.remove('hidden');
+  el('share-link-output').value = url;
+  el('share-expiry-note').textContent = expiresAt
+    ? `Expires ${new Date(expiresAt).toLocaleString()}`
+    : 'Never expires (until revoked).';
+}
+
+function closeShareModal() {
+  el('share-modal').classList.add('hidden');
+  currentShareFileId = null;
+}
+
+el('cancel-share').addEventListener('click', closeShareModal);
+el('close-share-modal').addEventListener('click', () => {
+  closeShareModal();
+  loadFiles();
+});
+
+el('create-share-btn').addEventListener('click', async () => {
+  el('share-modal-error').classList.add('hidden');
+  try {
+    const { url, expiresAt } = await api(`/api/files/${currentShareFileId}/share`, {
+      method: 'POST',
+      body: JSON.stringify({ expiry: el('share-expiry').value }),
+    });
+    showShareResult(url, expiresAt);
+  } catch (err) {
+    el('share-modal-error').textContent = err.message;
+    el('share-modal-error').classList.remove('hidden');
+  }
+});
+
+el('copy-share-link').addEventListener('click', async () => {
+  const input = el('share-link-output');
+  input.select();
+  try {
+    await navigator.clipboard.writeText(input.value);
+    const btn = el('copy-share-link');
+    const original = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(() => (btn.textContent = original), 1500);
+  } catch {
+    // clipboard API may be blocked — the text is already selected for manual copy
+  }
+});
+
+el('revoke-share-btn').addEventListener('click', async () => {
+  if (!confirm('Revoke this share link? It will stop working immediately.')) return;
+  try {
+    await api(`/api/files/${currentShareFileId}/share`, { method: 'DELETE' });
+    closeShareModal();
+    loadFiles();
+  } catch (err) {
+    el('share-modal-error').textContent = err.message;
+    el('share-modal-error').classList.remove('hidden');
+  }
+});
 
 function uploadFile(file) {
   const wrap = el('upload-progress-wrap');
