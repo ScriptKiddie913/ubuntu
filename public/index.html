@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MegaPool — combined MEGA storage</title>
+<link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+
+<div id="login-screen" class="screen hidden">
+  <form id="login-form" class="login-card">
+    <h1>MegaPool</h1>
+    <p class="muted">Enter the dashboard password to continue.</p>
+    <input id="login-password" type="password" placeholder="Password" autocomplete="current-password" required />
+    <button type="submit">Log in</button>
+    <p id="login-error" class="error hidden"></p>
+  </form>
+</div>
+
+<div id="app-screen" class="screen hidden">
+  <header class="topbar">
+    <h1>MegaPool</h1>
+    <button id="logout-btn" class="ghost">Log out</button>
+  </header>
+
+  <main>
+    <section class="panel">
+      <div class="panel-header">
+        <h2>Combined storage</h2>
+        <button id="add-account-btn" class="secondary">+ Add MEGA account</button>
+      </div>
+      <div class="pool-bar-wrap">
+        <div class="pool-bar"><div id="pool-bar-fill" class="pool-bar-fill"></div></div>
+        <div id="pool-summary-text" class="muted"></div>
+      </div>
+      <div id="accounts-list" class="accounts-list"></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">
+        <h2>Files</h2>
+      </div>
+
+      <div id="dropzone" class="dropzone">
+        <p>Drag &amp; drop a file here, or</p>
+        <label class="secondary file-input-label">
+          Choose file
+          <input id="file-input" type="file" hidden />
+        </label>
+        <div id="upload-progress-wrap" class="upload-progress-wrap hidden">
+          <div class="upload-progress-bar"><div id="upload-progress-fill"></div></div>
+          <span id="upload-progress-text" class="muted"></span>
+        </div>
+      </div>
+
+      <table class="files-table">
+        <thead>
+          <tr><th>Name</th><th>Size</th><th>Spread across</th><th>Uploaded</th><th></th></tr>
+        </thead>
+        <tbody id="files-tbody"></tbody>
+      </table>
+      <p id="no-files-msg" class="muted hidden">No files yet — upload something above.</p>
+    </section>
+  </main>
+</div>
+
+<div id="add-account-modal" class="modal hidden">
+  <form id="add-account-form" class="modal-card">
+    <h2>Add a MEGA account</h2>
+    <p class="muted">Credentials are encrypted at rest and only used to talk to MEGA's API on your behalf.</p>
+    <input id="acc-label" placeholder="Label (e.g. acc1)" required />
+    <input id="acc-email" type="email" placeholder="MEGA account email" required autocomplete="off" />
+    <input id="acc-password" type="password" placeholder="MEGA account password" required autocomplete="off" />
+    <input id="acc-2fa" placeholder="2FA code (only if enabled)" autocomplete="off" />
+    <div class="modal-actions">
+      <button type="button" id="cancel-add-account" class="ghost">Cancel</button>
+      <button type="submit">Connect account</button>
+    </div>
+    <p id="add-account-error" class="error hidden"></p>
+  </form>
+</div>
+
+<script src="/app.js"></script>
+</body>
+</html>
