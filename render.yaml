@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: pyrunner
+    runtime: python
+    plan: free
+    region: oregon
+    branch: main
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: ACCESS_TOKEN
+        generateValue: true
+      - key: WORKSPACE_DIR
+        value: /tmp/workspace
+      - key: RUN_TIMEOUT_SECONDS
+        value: "60"
+      - key: INSTALL_TIMEOUT_SECONDS
+        value: "240"
+      - key: MAX_OUTPUT_CHARS
+        value: "300000"
+    autoDeploy: true
