@@ -139,6 +139,53 @@ body::after {
   background: var(--accent);
 }
 
+/* Sign in / sign up tabs */
+.auth-tabs {
+  display: flex;
+  border: 1px solid var(--edge);
+  margin-top: 4px;
+}
+.auth-tab {
+  flex: 1;
+  background: transparent;
+  color: var(--muted);
+  border: none;
+  border-radius: 0;
+  padding: 9px 10px;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.auth-tab + .auth-tab { border-left: 1px solid var(--edge); }
+.auth-tab.active {
+  background: var(--glass-strong);
+  color: var(--text);
+}
+.auth-tab:hover:not(.active) { color: var(--text); background: var(--glass); }
+
+.auth-form { display: flex; flex-direction: column; gap: 14px; }
+
+.verify-notice { display: flex; flex-direction: column; gap: 12px; text-align: center; }
+.verify-notice h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ok);
+}
+.verify-notice #verify-email-addr { color: var(--text); font-weight: 600; }
+
+.topbar-right { display: flex; align-items: center; gap: 14px; }
+.user-badge {
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+  padding: 5px 10px;
+  border: 1px solid var(--edge);
+  background: var(--glass);
+}
+
 input {
   background: rgba(0, 0, 0, 0.35);
   border: 1px solid var(--edge);

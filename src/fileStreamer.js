@@ -21,7 +21,7 @@ async function sendFileDownload(record, res) {
   const orderedChunks = record.chunks.slice().sort((a, b) => a.part - b.part);
   for (const chunk of orderedChunks) {
     if (chunk.size === 0) continue;
-    const storage = await megaAccounts.getSession(chunk.label);
+    const storage = await megaAccounts.getSession(record.userId, chunk.label);
     const megaFile = storage.files[chunk.nodeId];
     if (!megaFile) {
       throw new Error(`Missing chunk on MEGA account "${chunk.label}" (node ${chunk.nodeId}).`);

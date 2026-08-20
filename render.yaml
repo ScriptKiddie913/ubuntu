@@ -6,17 +6,19 @@ services:
     buildCommand: npm install
     startCommand: npm start
     envVars:
-      - key: ADMIN_PASSWORD
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
       - key: MASTER_KEY
-        generateValue: true
-      - key: SESSION_SECRET
         generateValue: true
       - key: CHUNK_MAX_BYTES
         value: "4294967296"
       - key: NODE_ENV
         value: production
-    disk:
-      name: megapool-data
-      mountPath: /opt/render/project/src/data
-      sizeGB: 1
+# No persistent disk needed anymore — accounts and files now live in Supabase
+# Postgres (see supabase/schema.sql), not on local disk, so they already
+# survive redeploys, restarts, and service recreation without any special
+# Render configuration.

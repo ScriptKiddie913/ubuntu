@@ -5,8 +5,13 @@ const { sendFileDownload, isShareActive } = require('../fileStreamer');
 const router = express.Router();
 
 router.get('/:token', async (req, res) => {
-  const { files } = db.read();
-  const record = files.find((f) => f.share && f.share.token === req.params.token);
+  let record;
+  try {
+    record = await db.findFileByShareToken(req.params.token);
+  } catch (err) {
+    console.error('[share lookup] failed:', err);
+    return res.status(500).send('Something went wrong looking up that link.');
+  }
 
   if (!record || !isShareActive(record.share)) {
     return res

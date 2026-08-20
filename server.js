@@ -1,6 +1,5 @@
 require('dotenv').config();
 const express = require('express');
-const session = require('express-session');
 const path = require('path');
 
 const requireAuth = require('./src/middleware/requireAuth');
@@ -9,7 +8,7 @@ const accountRoutes = require('./src/routes/accounts');
 const fileRoutes = require('./src/routes/files');
 const publicShareRoutes = require('./src/routes/publicShare');
 
-for (const name of ['ADMIN_PASSWORD', 'MASTER_KEY', 'SESSION_SECRET']) {
+for (const name of ['SUPABASE_URL', 'SUPABASE_ANON_KEY', 'SUPABASE_SERVICE_ROLE_KEY', 'MASTER_KEY']) {
   if (!process.env[name]) {
     console.error(`Missing required environment variable ${name}. See .env.example. Exiting.`);
     process.exit(1);
@@ -17,23 +16,14 @@ for (const name of ['ADMIN_PASSWORD', 'MASTER_KEY', 'SESSION_SECRET']) {
 }
 
 const app = express();
-app.set('trust proxy', 1); // needed for secure cookies behind Render's proxy
+app.set('trust proxy', 1); // needed for correct protocol/host behind Render's proxy
 
 app.use(express.json());
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    },
-  })
-);
 
+// No server-side session middleware: auth is stateless. The frontend signs up/in
+// directly against Supabase Auth (via supabase-js + the anon key) and attaches the
+// resulting JWT as `Authorization: Bearer <token>` on every API call; requireAuth
+// verifies that token fresh on each request. See src/middleware/requireAuth.js.
 app.use('/api/auth', authRoutes);
 app.use('/api/accounts', requireAuth, accountRoutes);
 app.use('/api/files', requireAuth, fileRoutes);
@@ -53,4 +43,5 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`MegaPool listening on port ${PORT}`);
+  console.log(`[supabase] Using project: ${process.env.SUPABASE_URL}`);
 });

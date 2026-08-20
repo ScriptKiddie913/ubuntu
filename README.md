@@ -1,11 +1,14 @@
 # MegaPool
 
-A small self-hosted web app that pools several **MEGA.nz** accounts into one virtual drive.
-Point it at your 5 accounts (15GB each) and the dashboard shows ~75GB combined — upload,
-download and delete without ever thinking about which account a file actually lives on.
+A small self-hosted web app that pools several **MEGA.nz** accounts into one virtual drive
+per user. Each person signs up with their own email/password, verifies their email, and
+gets their own pool — point your account at 5 MEGA accounts (15GB each) and your dashboard
+shows ~75GB combined; upload, download and delete without ever thinking about which
+account a file actually lives on. Other signed-up users never see your accounts or files.
 
-Built with Node.js + Express, plain HTML/CSS/JS (no build step), and the unofficial
-[`megajs`](https://github.com/qgustavor/mega) client library.
+Built with Node.js + Express, plain HTML/CSS/JS (no build step), the unofficial
+[`megajs`](https://github.com/qgustavor/mega) client library, and **Supabase** for
+auth (email/password + email verification) and the metadata database.
 
 ## How it decides where files go
 
@@ -22,50 +25,86 @@ Built with Node.js + Express, plain HTML/CSS/JS (no build step), and the unoffic
   themselves can never be removed from the dashboard once added** — there's no delete
   endpoint or button, on purpose, since a file's chunks can land on any account at any
   time and a mid-flight removal risks silently orphaning pieces of files. If an account
-  genuinely has to go (compromised, etc.), that's a manual `data/db.json` edit plus
-  re-uploading anything that had chunks there — deliberately not a one-click action.
+  genuinely has to go (compromised, etc.), that's a manual row edit in Supabase's table
+  editor plus re-uploading anything that had chunks there — deliberately not a one-click
+  action.
 
-## 1. Get the code running locally
+## 1. Set up Supabase (auth + database)
+
+1. Create a project at [supabase.com](https://supabase.com) (free tier is fine).
+2. **Run the schema**: open your project's **SQL Editor → New query**, paste the contents
+   of [`supabase/schema.sql`](./supabase/schema.sql), and run it. This creates the
+   `mega_accounts` and `pool_files` tables with Row Level Security locked to
+   `auth.uid() = user_id` on every row — one user's data is invisible to another, enforced
+   by the database itself, not just app logic.
+3. **Turn on email verification**: go to **Authentication → Providers → Email** and
+   enable **"Confirm email."** This is what makes new sign-ups actually receive a
+   verification link and blocks sign-in until they click it (MegaPool's own backend also
+   enforces this — see `src/middleware/requireAuth.js` — but the Supabase setting is what
+   sends the email in the first place).
+4. **Grab your keys**: go to **Project Settings → API** and copy:
+   - **Project URL** → `SUPABASE_URL`
+   - **anon / public key** → `SUPABASE_ANON_KEY` (safe to expose to the browser)
+   - **service_role key** → `SUPABASE_SERVICE_ROLE_KEY` (**server-side only, never expose
+     this** — it bypasses Row Level Security, which is why only the backend uses it)
+
+## 2. Get the code running locally
 
 ```bash
 npm install
 cp .env.example .env
-# edit .env: set ADMIN_PASSWORD, and generate MASTER_KEY / SESSION_SECRET, e.g.:
+# edit .env: paste in your SUPABASE_URL / SUPABASE_ANON_KEY / SUPABASE_SERVICE_ROLE_KEY,
+# and generate a MASTER_KEY:
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 npm start
 ```
 
-Open `http://localhost:3000`, log in with `ADMIN_PASSWORD`, then click **+ Add MEGA
-account** for each of your 5 accounts (label, email, password, and a 2FA code if you
-have two-factor enabled on that account). The dashboard's combined bar updates as soon
-as accounts are connected.
+Open `http://localhost:3000`, click **Create account**, sign up with an email + password,
+check your inbox for the verification link, then sign in. Once in, click **+ Add MEGA
+account** for each of your MEGA accounts (label, email, password, and a 2FA code if you
+have two-factor enabled on that account) — they're saved to *your* account only. The
+dashboard's combined bar updates as soon as accounts are connected.
 
-## 2. Deploy to Render
+## 3. Deploy to Render
 
 This repo includes `render.yaml` (Render "Blueprint"). Push it to a GitHub repo, then in
-Render: **New → Blueprint**, point it at the repo, and Render will provision the web
-service for you. You'll be prompted to fill in `ADMIN_PASSWORD` (the others
-auto-generate).
+Render: **New → Blueprint**, point it at the repo. You'll be prompted to paste in
+`SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` (`MASTER_KEY`
+auto-generates).
 
-**Important — persistent storage:** the actual file *bytes* live on MEGA, but MegaPool
-keeps a small local `data/db.json` file that maps "this logical file = these MEGA
-account(s) + these node IDs." If that file is lost, your data is still on MEGA but the
-app won't know how to find/reassemble it. `render.yaml` attaches a 1GB persistent disk
-mounted at `data/` for exactly this reason — don't remove it, and note persistent disks
-require a paid Render plan (the free tier's filesystem is wiped on every redeploy).
+**No persistent disk needed.** Accounts and files now live in Supabase Postgres, not on
+local disk, so they already survive redeploys, restarts, and even deleting/recreating the
+Render service — the data lives entirely in your Supabase project, independent of Render.
+The only two things that would ever affect access to existing data are: deleting the
+Supabase project itself, or changing `MASTER_KEY` (which decrypts stored MEGA passwords)
+— don't change it once you have real accounts saved.
 
-If you'd rather not pay for a disk, you can adapt `src/db.js` to write to any small
-external store you already have (Render's own Postgres, Supabase, etc.) — the whole
-metadata layer is isolated in that one file.
+## 4. Security model
 
-## 3. A few things worth knowing
+- **Auth**: sign-up/sign-in happen directly between the browser and Supabase Auth (via the
+  anon key) — the backend never sees passwords. The browser then attaches the resulting
+  Supabase JWT as `Authorization: Bearer <token>` on every API call; the backend verifies
+  it fresh on each request (`src/middleware/requireAuth.js`) and rejects unverified emails.
+- **Per-user isolation, two layers deep**: (1) the backend scopes every database query by
+  the caller's verified user id, by hand; (2) the database itself also enforces this via
+  Row Level Security policies (`supabase/schema.sql`), so even a direct query using the
+  anon key can never return another user's rows. The `service_role` key (which does bypass
+  RLS) never leaves the server.
+- **MEGA credentials**: each connected MEGA account's password is AES-256-GCM encrypted
+  (`src/crypto.js`) before it's stored in Supabase, keyed by `MASTER_KEY` — a second,
+  independent secret. Someone with raw database access alone still can't read the
+  plaintext MEGA passwords without also having `MASTER_KEY`.
+- **No emails shown in the UI**: the dashboard's account cards show only the label and
+  usage bar, never the underlying MEGA account email, even to the owning user.
+
+## 5. A few things worth knowing
 
 - **`megajs` is an unofficial, community-maintained client**, not MEGA's official SDK.
   It works well but can lag behind MEGA-side changes; keep it updated.
-- **Rate limiting:** logging into 5 accounts and moving real traffic through MEGA's free
-  tier can occasionally trip MEGA's abuse/rate-limit heuristics (temporary IP throttling,
-  the odd captcha). This is more likely from a shared datacenter IP (like Render's) than
-  from your home connection — if you hit it, retry after a bit.
+- **Rate limiting:** logging into several accounts and moving real traffic through MEGA's
+  free tier can occasionally trip MEGA's abuse/rate-limit heuristics (temporary IP
+  throttling, the odd captcha). This is more likely from a shared datacenter IP (like
+  Render's) than from your home connection — if you hit it, retry after a bit.
 - **Terms of service:** using multiple free accounts to add up storage beyond what MEGA
   intends for a single free account may run against MEGA's Terms of Service (most free
   cloud providers restrict this kind of pooling). Worth a read of MEGA's current ToS
@@ -75,22 +114,22 @@ metadata layer is isolated in that one file.
   storage system — a file's pieces live on exactly one account each, with no
   replication. If an account gets suspended/locked, any file with a piece on it becomes
   unrecoverable. Don't use this as your only copy of anything important.
-- **Security:** account passwords are encrypted at rest (AES-256-GCM, keyed by
-  `MASTER_KEY`) but the app can decrypt them any time it runs — treat `MASTER_KEY`,
-  `ADMIN_PASSWORD`, and access to the server itself as sensitive.
 
 ## Project layout
 
 ```
-server.js                 Express app entry point
-src/crypto.js              AES-256-GCM encrypt/decrypt for stored MEGA passwords
-src/db.js                  Tiny JSON-file metadata store (accounts + file/chunk index)
-src/megaAccounts.js        MEGA login/session cache + quota lookups
-src/placement.js           Bin-packing: decides which account(s) a file's bytes go to
-src/middleware/requireAuth.js
-src/routes/auth.js         Dashboard login/logout
-src/routes/accounts.js     Add/list/remove MEGA accounts
-src/routes/files.js        Upload/list/download/delete files
-public/                    Static dashboard (HTML/CSS/vanilla JS)
-render.yaml                Render Blueprint (web service + persistent disk)
+server.js                  Express app entry point
+src/crypto.js               AES-256-GCM encrypt/decrypt for stored MEGA passwords
+src/supabaseClient.js        Server-side Supabase client (service role) + public config
+src/db.js                    Per-user Supabase data access (accounts + file/chunk index)
+src/megaAccounts.js          MEGA login/session cache + quota lookups, per user
+src/placement.js             Bin-packing: decides which account(s) a file's bytes go to
+src/middleware/requireAuth.js  Verifies the caller's Supabase JWT on every API call
+src/routes/auth.js           Public Supabase config + session-status check
+src/routes/accounts.js       Add/list MEGA accounts (per signed-in user)
+src/routes/files.js          Upload/list/download/delete/share files (per signed-in user)
+src/routes/publicShare.js    Public, unauthenticated share-link downloads
+public/                      Static dashboard (HTML/CSS/vanilla JS + supabase-js)
+supabase/schema.sql          Tables + Row Level Security policies — run once in Supabase
+render.yaml                  Render Blueprint (web service, no disk needed anymore)
 ```

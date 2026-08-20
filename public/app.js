@@ -7,58 +7,148 @@ function formatBytes(bytes) {
   return `${(bytes / Math.pow(1024, i)).toFixed(2)} ${units[i]}`;
 }
 
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  }[c]));
+}
+
+// ---------- Supabase client ----------
+
+let supabase = null;
+
+async function initSupabase() {
+  const res = await fetch('/api/auth/config');
+  if (!res.ok) throw new Error('Could not load auth configuration from the server.');
+  const { supabaseUrl, supabaseAnonKey } = await res.json();
+  // The anon key is safe to use in the browser — see supabase/schema.sql for the
+  // RLS policies that actually enforce what it's allowed to touch.
+  supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+}
+
+async function getAccessToken() {
+  if (!supabase) return null;
+  const { data } = await supabase.auth.getSession();
+  return data && data.session ? data.session.access_token : null;
+}
+
+// ---------- API helper (attaches the current Supabase session token) ----------
+
 async function api(path, options = {}) {
-  const res = await fetch(path, {
-    headers: { 'Content-Type': 'application/json' },
-    ...options,
-  });
+  const token = await getAccessToken();
+  const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const res = await fetch(path, { ...options, headers });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
   return data;
 }
 
-// ---------- Auth ----------
-
-async function init() {
-  try {
-    const { authenticated } = await api('/api/auth/status');
-    if (authenticated) showApp();
-    else showLogin();
-  } catch {
-    showLogin();
-  }
-}
+// ---------- Screens ----------
 
 function showLogin() {
   el('login-screen').classList.remove('hidden');
   el('app-screen').classList.add('hidden');
+  showAuthTab('signin');
 }
 
-function showApp() {
+async function showApp() {
   el('login-screen').classList.add('hidden');
   el('app-screen').classList.remove('hidden');
+  const { data } = await supabase.auth.getUser();
+  el('user-email-badge').textContent = (data && data.user && data.user.email) || '';
   loadAccounts();
   loadFiles();
 }
 
-el('login-form').addEventListener('submit', async (e) => {
+async function init() {
+  await initSupabase();
+
+  supabase.auth.onAuthStateChange((_event, session) => {
+    if (session) showApp();
+    else showLogin();
+  });
+
+  const { data } = await supabase.auth.getSession();
+  if (data && data.session) showApp();
+  else showLogin();
+}
+
+// ---------- Auth: sign in / sign up tabs ----------
+
+function showAuthTab(which) {
+  const isSignin = which === 'signin';
+  el('tab-signin').classList.toggle('active', isSignin);
+  el('tab-signup').classList.toggle('active', !isSignin);
+  el('signin-form').classList.toggle('hidden', !isSignin);
+  el('signup-form').classList.toggle('hidden', isSignin);
+  el('verify-notice').classList.add('hidden');
+  if (isSignin) el('signin-form').classList.remove('hidden');
+  else el('signup-form').classList.remove('hidden');
+}
+
+el('tab-signin').addEventListener('click', () => showAuthTab('signin'));
+el('tab-signup').addEventListener('click', () => showAuthTab('signup'));
+
+el('signin-form').addEventListener('submit', async (e) => {
   e.preventDefault();
-  el('login-error').classList.add('hidden');
-  try {
-    await api('/api/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ password: el('login-password').value }),
-    });
-    el('login-password').value = '';
-    showApp();
-  } catch (err) {
-    el('login-error').textContent = err.message;
-    el('login-error').classList.remove('hidden');
+  el('signin-error').classList.add('hidden');
+  const email = el('signin-email').value.trim();
+  const password = el('signin-password').value;
+
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) {
+    el('signin-error').textContent = /confirm/i.test(error.message)
+      ? 'Please verify your email first — check your inbox for the confirmation link.'
+      : error.message;
+    el('signin-error').classList.remove('hidden');
+    return;
+  }
+  el('signin-password').value = '';
+  // showApp() runs automatically via onAuthStateChange
+});
+
+el('signup-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  el('signup-error').classList.add('hidden');
+  const email = el('signup-email').value.trim();
+  const password = el('signup-password').value;
+  const confirm = el('signup-password-confirm').value;
+
+  if (password !== confirm) {
+    el('signup-error').textContent = 'Passwords do not match.';
+    el('signup-error').classList.remove('hidden');
+    return;
+  }
+
+  const { data, error } = await supabase.auth.signUp({ email, password });
+  if (error) {
+    el('signup-error').textContent = error.message;
+    el('signup-error').classList.remove('hidden');
+    return;
+  }
+
+  el('signup-form').reset();
+  // If email confirmations are enabled (the default and the recommended setting —
+  // see supabase/schema.sql / README), there's no active session yet: show the
+  // "check your email" notice instead of the forms.
+  if (!data.session) {
+    el('signin-form').classList.add('hidden');
+    el('signup-form').classList.add('hidden');
+    el('verify-email-addr').textContent = email;
+    el('verify-notice').classList.remove('hidden');
   }
 });
 
+el('verify-back-btn').addEventListener('click', () => showAuthTab('signin'));
+
 el('logout-btn').addEventListener('click', async () => {
-  await api('/api/auth/logout', { method: 'POST' });
+  await supabase.auth.signOut();
   showLogin();
 });
 
@@ -145,8 +235,30 @@ async function loadFiles() {
   }
 
   tbody.querySelectorAll('.dl-btn').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      window.location.href = `/api/files/${btn.dataset.id}/download`;
+    btn.addEventListener('click', async () => {
+      // Downloads need the bearer token too, so we can't just navigate the browser
+      // to the URL — fetch it as a blob (ok for reasonably sized files) instead.
+      try {
+        const token = await getAccessToken();
+        const res = await fetch(`/api/files/${btn.dataset.id}/download`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Download failed.');
+        const blob = await res.blob();
+        const disposition = res.headers.get('Content-Disposition') || '';
+        const match = disposition.match(/filename\*?=(?:UTF-8'')?"?([^";]+)"?/i);
+        const filename = match ? decodeURIComponent(match[1]) : 'download';
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        alert(err.message);
+      }
     });
   });
   tbody.querySelectorAll('.del-btn').forEach((btn) => {
@@ -251,35 +363,38 @@ function uploadFile(file) {
   fill.style.width = '0%';
   text.textContent = `Uploading ${file.name}…`;
 
-  const formData = new FormData();
-  formData.append('file', file);
+  getAccessToken().then((token) => {
+    const formData = new FormData();
+    formData.append('file', file);
 
-  const xhr = new XMLHttpRequest();
-  xhr.open('POST', '/api/files');
-  xhr.upload.addEventListener('progress', (e) => {
-    if (!e.lengthComputable) return;
-    const pct = Math.round((e.loaded / e.total) * 100);
-    fill.style.width = `${pct}%`;
-    text.textContent = `Uploading ${file.name}… ${pct}%`;
-  });
-  xhr.onload = () => {
-    wrap.classList.add('hidden');
-    if (xhr.status >= 200 && xhr.status < 300) {
-      loadFiles();
-      loadAccounts();
-    } else {
-      try {
-        alert(JSON.parse(xhr.responseText).error || 'Upload failed.');
-      } catch {
-        alert('Upload failed.');
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/files');
+    if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+    xhr.upload.addEventListener('progress', (e) => {
+      if (!e.lengthComputable) return;
+      const pct = Math.round((e.loaded / e.total) * 100);
+      fill.style.width = `${pct}%`;
+      text.textContent = `Uploading ${file.name}… ${pct}%`;
+    });
+    xhr.onload = () => {
+      wrap.classList.add('hidden');
+      if (xhr.status >= 200 && xhr.status < 300) {
+        loadFiles();
+        loadAccounts();
+      } else {
+        try {
+          alert(JSON.parse(xhr.responseText).error || 'Upload failed.');
+        } catch {
+          alert('Upload failed.');
+        }
       }
-    }
-  };
-  xhr.onerror = () => {
-    wrap.classList.add('hidden');
-    alert('Upload failed (network error).');
-  };
-  xhr.send(formData);
+    };
+    xhr.onerror = () => {
+      wrap.classList.add('hidden');
+      alert('Upload failed (network error).');
+    };
+    xhr.send(formData);
+  });
 }
 
 el('file-input').addEventListener('change', (e) => {
@@ -304,15 +419,5 @@ dropzone.addEventListener('drop', (e) => {
   const file = e.dataTransfer.files[0];
   if (file) uploadFile(file);
 });
-
-function escapeHtml(str) {
-  return String(str).replace(/[&<>"']/g, (c) => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#39;',
-  }[c]));
-}
 
 init();

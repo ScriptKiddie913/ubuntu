@@ -5,23 +5,51 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>MegaPool — combined MEGA storage</title>
 <link rel="stylesheet" href="/styles.css" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 </head>
 <body>
 
 <div id="login-screen" class="screen hidden">
-  <form id="login-form" class="login-card">
+  <div class="login-card">
     <h1>MegaPool</h1>
-    <p class="muted">Enter the dashboard password to continue.</p>
-    <input id="login-password" type="password" placeholder="Password" autocomplete="current-password" required />
-    <button type="submit">Log in</button>
-    <p id="login-error" class="error hidden"></p>
-  </form>
+
+    <div class="auth-tabs">
+      <button type="button" id="tab-signin" class="auth-tab active">Sign in</button>
+      <button type="button" id="tab-signup" class="auth-tab">Create account</button>
+    </div>
+
+    <form id="signin-form" class="auth-form">
+      <p class="muted">Sign in to your MegaPool dashboard.</p>
+      <input id="signin-email" type="email" placeholder="Email" autocomplete="email" required />
+      <input id="signin-password" type="password" placeholder="Password" autocomplete="current-password" required />
+      <button type="submit">Sign in</button>
+      <p id="signin-error" class="error hidden"></p>
+    </form>
+
+    <form id="signup-form" class="auth-form hidden">
+      <p class="muted">Create an account. We'll email you a link to verify before you can sign in.</p>
+      <input id="signup-email" type="email" placeholder="Email" autocomplete="email" required />
+      <input id="signup-password" type="password" placeholder="Password (min 6 characters)" autocomplete="new-password" minlength="6" required />
+      <input id="signup-password-confirm" type="password" placeholder="Confirm password" autocomplete="new-password" minlength="6" required />
+      <button type="submit">Create account</button>
+      <p id="signup-error" class="error hidden"></p>
+    </form>
+
+    <div id="verify-notice" class="verify-notice hidden">
+      <h2>Check your email</h2>
+      <p class="muted">We sent a verification link to <span id="verify-email-addr"></span>. Click it, then come back and sign in.</p>
+      <button type="button" id="verify-back-btn" class="secondary">Back to sign in</button>
+    </div>
+  </div>
 </div>
 
 <div id="app-screen" class="screen hidden">
   <header class="topbar">
     <h1>MegaPool</h1>
-    <button id="logout-btn" class="ghost">Log out</button>
+    <div class="topbar-right">
+      <span id="user-email-badge" class="user-badge"></span>
+      <button id="logout-btn" class="ghost">Sign out</button>
+    </div>
   </header>
 
   <main>
@@ -30,7 +58,7 @@
         <h2>Combined storage</h2>
         <button id="add-account-btn" class="secondary">+ Add MEGA account</button>
       </div>
-      <p class="muted">Accounts are permanent once added — there's no remove button by design, since files may have pieces stored on any account at any time.</p>
+      <p class="muted">Accounts are permanent once added — there's no remove button by design, since files may have pieces stored on any account at any time. Only you can see or use the accounts you connect.</p>
       <div class="pool-bar-wrap">
         <div class="pool-bar"><div id="pool-bar-fill" class="pool-bar-fill"></div></div>
         <div id="pool-summary-text" class="muted"></div>
