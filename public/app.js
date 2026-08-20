@@ -19,20 +19,34 @@ function escapeHtml(str) {
 
 // ---------- Supabase client ----------
 
-let supabase = null;
+let supabaseClient = null;
 
 async function initSupabase() {
-  const res = await fetch('/api/auth/config');
-  if (!res.ok) throw new Error('Could not load auth configuration from the server.');
+  if (typeof window.supabase === 'undefined' || !window.supabase.createClient) {
+    throw new Error('Supabase client library failed to load (check your network/ad-blocker and reload).');
+  }
+  let res;
+  try {
+    res = await fetch('/api/auth/config');
+  } catch (err) {
+    throw new Error('Could not reach the MegaPool server. Is it running?');
+  }
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || 'Server rejected the configuration request.');
+  }
   const { supabaseUrl, supabaseAnonKey } = await res.json();
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error('Server is missing SUPABASE_URL / SUPABASE_ANON_KEY — check its environment variables.');
+  }
   // The anon key is safe to use in the browser — see supabase/schema.sql for the
   // RLS policies that actually enforce what it's allowed to touch.
-  supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+  supabaseClient = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
 }
 
 async function getAccessToken() {
-  if (!supabase) return null;
-  const { data } = await supabase.auth.getSession();
+  if (!supabaseClient) return null;
+  const { data } = await supabaseClient.auth.getSession();
   return data && data.session ? data.session.access_token : null;
 }
 
@@ -51,33 +65,65 @@ async function api(path, options = {}) {
 
 // ---------- Screens ----------
 
+function switchScreen(id) {
+  ['boot-screen', 'login-screen', 'app-screen'].forEach((s) => {
+    const node = el(s);
+    if (s === id) {
+      node.classList.remove('hidden');
+      node.classList.add('screen-in');
+    } else {
+      node.classList.add('hidden');
+      node.classList.remove('screen-in');
+    }
+  });
+}
+
 function showLogin() {
-  el('login-screen').classList.remove('hidden');
-  el('app-screen').classList.add('hidden');
+  switchScreen('login-screen');
   showAuthTab('signin');
 }
 
 async function showApp() {
-  el('login-screen').classList.add('hidden');
-  el('app-screen').classList.remove('hidden');
-  const { data } = await supabase.auth.getUser();
+  switchScreen('app-screen');
+  const { data } = await supabaseClient.auth.getUser();
   el('user-email-badge').textContent = (data && data.user && data.user.email) || '';
   loadAccounts();
   loadFiles();
 }
 
-async function init() {
-  await initSupabase();
+function showBootError(message) {
+  el('boot-status').classList.add('hidden');
+  el('boot-error-message').textContent = message;
+  el('boot-error').classList.remove('hidden');
+}
 
-  supabase.auth.onAuthStateChange((_event, session) => {
+async function init() {
+  el('boot-error').classList.add('hidden');
+  el('boot-status').classList.remove('hidden');
+  switchScreen('boot-screen');
+
+  try {
+    await initSupabase();
+  } catch (err) {
+    showBootError(err.message || 'Something went wrong while starting up.');
+    return;
+  }
+
+  supabaseClient.auth.onAuthStateChange((_event, session) => {
     if (session) showApp();
     else showLogin();
   });
 
-  const { data } = await supabase.auth.getSession();
-  if (data && data.session) showApp();
-  else showLogin();
+  try {
+    const { data } = await supabaseClient.auth.getSession();
+    if (data && data.session) await showApp();
+    else showLogin();
+  } catch (err) {
+    showBootError('Could not check your sign-in status. ' + (err.message || ''));
+  }
 }
+
+el('boot-retry-btn').addEventListener('click', init);
 
 // ---------- Auth: sign in / sign up tabs ----------
 
@@ -101,7 +147,7 @@ el('signin-form').addEventListener('submit', async (e) => {
   const email = el('signin-email').value.trim();
   const password = el('signin-password').value;
 
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
   if (error) {
     el('signin-error').textContent = /confirm/i.test(error.message)
       ? 'Please verify your email first — check your inbox for the confirmation link.'
@@ -126,7 +172,7 @@ el('signup-form').addEventListener('submit', async (e) => {
     return;
   }
 
-  const { data, error } = await supabase.auth.signUp({ email, password });
+  const { data, error } = await supabaseClient.auth.signUp({ email, password });
   if (error) {
     el('signup-error').textContent = error.message;
     el('signup-error').classList.remove('hidden');
@@ -148,7 +194,7 @@ el('signup-form').addEventListener('submit', async (e) => {
 el('verify-back-btn').addEventListener('click', () => showAuthTab('signin'));
 
 el('logout-btn').addEventListener('click', async () => {
-  await supabase.auth.signOut();
+  await supabaseClient.auth.signOut();
   showLogin();
 });
 
@@ -420,4 +466,7 @@ dropzone.addEventListener('drop', (e) => {
   if (file) uploadFile(file);
 });
 
-init();
+init().catch((err) => {
+  console.error('[boot] unexpected failure:', err);
+  showBootError(err.message || 'An unexpected error occurred while starting up.');
+});

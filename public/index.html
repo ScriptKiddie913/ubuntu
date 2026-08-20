@@ -4,10 +4,31 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>MegaPool — combined MEGA storage</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="/styles.css" />
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
+
+<!-- Shown immediately on load, before anything else has had a chance to run —
+     this is what you see instead of a blank page while the app boots, and
+     what stays on screen (swapped for an error panel) if boot ever fails. -->
+<div id="boot-screen" class="screen boot-screen">
+  <div class="boot-inner">
+    <div class="boot-mark"></div>
+    <div class="boot-spinner"><span></span><span></span><span></span><span></span></div>
+    <p id="boot-status" class="muted">Loading MegaPool…</p>
+  </div>
+  <div id="boot-error" class="boot-error hidden">
+    <div class="boot-error-card">
+      <h2>Couldn't start MegaPool</h2>
+      <p id="boot-error-message" class="muted"></p>
+      <button type="button" id="boot-retry-btn">Retry</button>
+    </div>
+  </div>
+</div>
 
 <div id="login-screen" class="screen hidden">
   <div class="login-card">
@@ -89,7 +110,10 @@
         </thead>
         <tbody id="files-tbody"></tbody>
       </table>
-      <p id="no-files-msg" class="muted hidden">No files yet — upload something above.</p>
+      <div id="no-files-msg" class="files-empty hidden">
+        <div class="files-empty-mark"></div>
+        <p class="muted">No files yet — upload something above.</p>
+      </div>
     </section>
   </main>
 </div>
