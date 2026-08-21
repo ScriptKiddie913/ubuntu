@@ -41,7 +41,24 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`MegaPool listening on port ${PORT}`);
   console.log(`[supabase] Using project: ${process.env.SUPABASE_URL}`);
 });
+
+// Uploads for large files take a while: the server receives the file from the
+// browser, THEN re-uploads it to MEGA, all within the same request/response cycle
+// — so a big file can easily take several minutes end-to-end, especially on a
+// slower connection. Node's defaults (headersTimeout: 60s, requestTimeout: 5min)
+// are tuned for typical API requests and will silently kill a slow upload partway
+// through, which looks exactly like "small files work, big ones just fail." Give
+// large uploads real room to finish instead.
+server.requestTimeout = 30 * 60 * 1000; // 30 min to fully receive the incoming request body
+server.headersTimeout = 30 * 60 * 1000 + 5000; // must be >= requestTimeout per Node's own constraint
+server.timeout = 0; // disable the separate idle-socket timeout for this flow
+server.keepAliveTimeout = 65 * 1000; // keep the usual keep-alive behavior for normal requests
+
+// Note: if this is deployed behind another proxy/CDN in front of Node (Render's
+// own edge, Cloudflare, nginx, etc.), that layer may have its own independent
+// timeout or body-size limit that these settings can't reach — worth checking
+// there too if large uploads still fail after this change.

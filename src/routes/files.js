@@ -13,7 +13,30 @@ const CHUNK_MAX_BYTES = Number(process.env.CHUNK_MAX_BYTES) || 4 * 1024 * 1024 *
 
 const EXPIRY_OPTIONS_HOURS = { '1h': 1, '1d': 24, '7d': 24 * 7, '30d': 24 * 30 }; // 'never' = no expiry
 
+// No fileSize limit set here on purpose — the pool's real ceiling is whatever the
+// connected MEGA accounts can hold, enforced later by planPlacement(), not an
+// arbitrary multer cutoff. `dest` streams straight to disk (not buffered in
+// memory), so large files don't blow up server RAM while they're received.
 const upload = multer({ dest: os.tmpdir() });
+
+// Wraps multer so a failure while RECEIVING the upload (client gave up partway,
+// disk ran out of space, etc.) comes back as a clear JSON error instead of a bare
+// connection drop the frontend can't explain to the user.
+function uploadMiddleware(req, res, next) {
+  upload.single('file')(req, res, (err) => {
+    if (!err) return next();
+    console.error('[upload] failed while receiving the file:', err);
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(413).json({ error: 'File is too large for this server\'s configured limit.' });
+    }
+    if (req.file) fs.unlink(req.file.path, () => {});
+    res.status(400).json({
+      error:
+        'Upload was interrupted while the file was being received (connection dropped or timed out). ' +
+        'This is common with slow connections and large files — try again, ideally on a faster/more stable network.',
+    });
+  });
+}
 
 function shareUrl(req, token) {
   return `${req.protocol}://${req.get('host')}/share/${token}`;
@@ -43,7 +66,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.post('/', upload.single('file'), async (req, res) => {
+router.post('/', uploadMiddleware, async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No file uploaded (form field name must be "file").' });
   }

@@ -490,6 +490,19 @@ main {
   background: var(--ok);
   transition: width 0.15s linear;
 }
+#upload-progress-fill.indeterminate {
+  background: repeating-linear-gradient(
+    45deg,
+    var(--accent) 0px, var(--accent) 10px,
+    var(--accent-dim) 10px, var(--accent-dim) 20px
+  );
+  background-size: 200% 100%;
+  animation: upload-indeterminate 1s linear infinite;
+}
+@keyframes upload-indeterminate {
+  from { background-position: 0 0; }
+  to { background-position: -28px 0; }
+}
 
 /* ---------------- Files table ---------------- */
 .files-table { width: 100%; border-collapse: collapse; }

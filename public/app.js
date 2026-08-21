@@ -406,6 +406,7 @@ function uploadFile(file) {
   const fill = el('upload-progress-fill');
   const text = el('upload-progress-text');
   wrap.classList.remove('hidden');
+  fill.classList.remove('indeterminate');
   fill.style.width = '0%';
   text.textContent = `Uploading ${file.name}…`;
 
@@ -422,8 +423,19 @@ function uploadFile(file) {
       fill.style.width = `${pct}%`;
       text.textContent = `Uploading ${file.name}… ${pct}%`;
     });
+    xhr.upload.addEventListener('load', () => {
+      // The browser has now finished sending the file, but the server still has
+      // to relay it into MEGA before it can respond — that leg has no per-byte
+      // progress we can show, so switch to an indeterminate state rather than
+      // leaving the bar frozen at 100% (which looks identical to "stuck" on a
+      // large file that can take several minutes to finish here).
+      fill.style.width = '100%';
+      fill.classList.add('indeterminate');
+      text.textContent = `${file.name} received — moving it into MEGA now (this can take a few minutes for larger files)…`;
+    });
     xhr.onload = () => {
       wrap.classList.add('hidden');
+      fill.classList.remove('indeterminate');
       if (xhr.status >= 200 && xhr.status < 300) {
         loadFiles();
         loadAccounts();
@@ -437,7 +449,11 @@ function uploadFile(file) {
     };
     xhr.onerror = () => {
       wrap.classList.add('hidden');
-      alert('Upload failed (network error).');
+      fill.classList.remove('indeterminate');
+      alert(
+        'Upload failed due to a network error. If this was a large file, it may have hit a connection timeout ' +
+          'partway through — try again on a faster/more stable connection.'
+      );
     };
     xhr.send(formData);
   });
