@@ -222,6 +222,14 @@ body::after {
   background: var(--accent);
 }
 
+.brand-mark {
+  width: 26px;
+  height: 26px;
+  background: var(--accent);
+  box-shadow: 0 0 22px var(--accent-glow);
+  margin-bottom: 4px;
+}
+
 /* Sign in / sign up tabs */
 .auth-tabs {
   display: flex;
@@ -322,6 +330,54 @@ button.ghost {
 }
 button.ghost:hover { color: var(--text); border-color: var(--edge-strong); background: var(--glass); box-shadow: none; }
 
+button:disabled {
+  opacity: 0.55;
+  cursor: default;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.icon-btn svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+/* ---------------- Toasts ---------------- */
+.toast-container {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: min(360px, calc(100vw - 40px));
+}
+.toast {
+  background: linear-gradient(180deg, var(--glass-strong), var(--glass));
+  backdrop-filter: blur(var(--blur)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(140%);
+  border: 1px solid var(--edge);
+  border-left: 2px solid var(--muted-2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 12px 30px rgba(0, 0, 0, 0.5);
+  padding: 12px 14px;
+  font-size: 13px;
+  color: var(--text);
+  opacity: 0;
+  transform: translateX(16px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.toast-in { opacity: 1; transform: translateX(0); }
+.toast-success { border-left-color: var(--ok); }
+.toast-error { border-left-color: var(--danger); }
+.toast-info { border-left-color: var(--accent); }
+
 /* ---------------- Topbar ---------------- */
 .topbar {
   display: flex;
@@ -415,6 +471,16 @@ main {
   background: var(--hairline);
   border: 1px solid var(--hairline);
 }
+.accounts-empty {
+  grid-column: 1 / -1;
+  padding: 24px 16px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.015);
+}
+@keyframes card-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 .account-card {
   background: rgba(255, 255, 255, 0.02);
   backdrop-filter: none;
@@ -424,6 +490,7 @@ main {
   padding: 16px;
   position: relative;
   transition: background 0.15s ease;
+  animation: card-in 0.3s ease both;
 }
 .account-card::before {
   content: '';
@@ -476,6 +543,14 @@ main {
 }
 .dropzone p { margin: 0 0 12px; color: var(--muted); font-size: 13px; }
 .file-input-label { display: inline-block; }
+.dropzone-icon {
+  width: 30px;
+  height: 30px;
+  color: var(--muted-2);
+  margin-bottom: 10px;
+  transition: color 0.15s ease;
+}
+.dropzone.dragover .dropzone-icon { color: var(--accent); }
 
 .upload-progress-wrap { margin-top: 18px; }
 .upload-progress-bar {
@@ -505,6 +580,7 @@ main {
 }
 
 /* ---------------- Files table ---------------- */
+.files-table-wrap { overflow-x: auto; }
 .files-table { width: 100%; border-collapse: collapse; }
 .files-table th, .files-table td {
   text-align: left;
@@ -519,6 +595,12 @@ main {
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
+.file-name-cell { font-weight: 500; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@keyframes row-in {
+  from { opacity: 0; transform: translateX(-4px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.row-in { animation: row-in 0.25s ease both; }
 .files-table tbody tr { transition: background 0.15s ease, box-shadow 0.15s ease; }
 .files-table tbody tr:hover { background: rgba(255, 255, 255, 0.025); box-shadow: inset 2px 0 0 var(--accent); }
 .files-table td.actions { text-align: right; white-space: nowrap; }
@@ -532,12 +614,26 @@ main {
   align-items: center;
   gap: 10px;
 }
-.files-empty-mark {
-  width: 22px;
-  height: 22px;
-  border: 2px dashed var(--edge-strong);
-}
+.files-empty svg { width: 34px; height: 34px; color: var(--muted-2); }
 .files-empty p { margin: 0; }
+
+/* ---------------- Loading skeletons ---------------- */
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.9; }
+}
+.skeleton-card {
+  height: 78px;
+  background: rgba(255, 255, 255, 0.03);
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+.skeleton-row td { padding: 14px 10px; }
+.skeleton-line {
+  height: 12px;
+  width: 70%;
+  background: rgba(255, 255, 255, 0.05);
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
 
 .chip {
   display: inline-block;

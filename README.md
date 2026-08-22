@@ -97,7 +97,24 @@ Supabase project itself, or changing `MASTER_KEY` (which decrypts stored MEGA pa
 - **No emails shown in the UI**: the dashboard's account cards show only the label and
   usage bar, never the underlying MEGA account email, even to the owning user.
 
-## 5. A few things worth knowing
+## 5. Keeping the app awake on Render's free tier
+
+Render's free tier spins a web service down after ~15 minutes of no inbound traffic,
+then "cold starts" it (10-30s delay) on the next request. If you're on that tier, this
+app pings its own `/health` endpoint every 10 minutes to keep Render's edge seeing
+traffic — no setup needed, it uses `RENDER_EXTERNAL_URL`, which Render sets
+automatically for every web service.
+
+**One caveat:** self-ping only prevents spin-down *while the process is already
+running* — it can't wake an instance that's already asleep, since a sleeping instance
+isn't running this code either. For a more bulletproof setup, also point a free
+external cron service (e.g. [UptimeRobot](https://uptimerobot.com),
+[cron-job.org](https://cron-job.org)) at `https://your-app.onrender.com/health` on a
+~10 minute interval — that hits Render's edge from outside regardless of the
+instance's current state. Not needed at all on Render's paid tiers, which don't spin
+down.
+
+## 6. A few things worth knowing
 
 - **`megajs` is an unofficial, community-maintained client**, not MEGA's official SDK.
   It works well but can lag behind MEGA-side changes; keep it updated.
@@ -115,7 +132,19 @@ Supabase project itself, or changing `MASTER_KEY` (which decrypts stored MEGA pa
   replication. If an account gets suspended/locked, any file with a piece on it becomes
   unrecoverable. Don't use this as your only copy of anything important.
 
-## Project layout
+## 7. Structured/searchable data, stored entirely on MEGA
+
+`/api/db/*` is a separate, optional feature: a lightweight structured-data
+store where the catalog, table rows, and search index all live as objects on
+MEGA — not in Supabase/Postgres. It's meant for cases like "I have a 50GB text
+file and want to find rows containing a keyword" without needing a full
+external database.
+
+Full endpoint documentation, chunk sizing, and an example of pulling raw data
+chunks into your **own** external scanning/indexing server (instead of using
+MegaPool's basic built-in search) is in **[API.md](./API.md)**.
+
+## 8. Project layout
 
 ```
 server.js                  Express app entry point
@@ -124,12 +153,17 @@ src/supabaseClient.js        Server-side Supabase client (service role) + public
 src/db.js                    Per-user Supabase data access (accounts + file/chunk index)
 src/megaAccounts.js          MEGA login/session cache + quota lookups, per user
 src/placement.js             Bin-packing: decides which account(s) a file's bytes go to
+src/keepAlive.js              Self-ping so Render's free tier doesn't spin the app down
+src/megaDb.js                 Structured-data engine: catalog/rows/search index, all stored on MEGA
+src/importJobs.js             Background job tracker for large text-file imports into megaDb
 src/middleware/requireAuth.js  Verifies the caller's Supabase JWT on every API call
 src/routes/auth.js           Public Supabase config + session-status check
 src/routes/accounts.js       Add/list MEGA accounts (per signed-in user)
 src/routes/files.js          Upload/list/download/delete/share files (per signed-in user)
 src/routes/publicShare.js    Public, unauthenticated share-link downloads
+src/routes/db.js              /api/db/* — tables, search, and raw chunk access (see API.md)
 public/                      Static dashboard (HTML/CSS/vanilla JS + supabase-js)
 supabase/schema.sql          Tables + Row Level Security policies — run once in Supabase
 render.yaml                  Render Blueprint (web service, no disk needed anymore)
+API.md                        /api/db/* endpoint docs — chunk sizing + external scanning workflow
 ```

@@ -17,6 +17,21 @@ function escapeHtml(str) {
   }[c]));
 }
 
+// ---------- Toasts (replaces browser alert() for a consistent, non-blocking UI) ----------
+
+function toast(message, kind = 'info') {
+  const container = el('toast-container');
+  const node = document.createElement('div');
+  node.className = `toast toast-${kind}`;
+  node.textContent = message;
+  container.appendChild(node);
+  requestAnimationFrame(() => node.classList.add('toast-in'));
+  setTimeout(() => {
+    node.classList.remove('toast-in');
+    node.addEventListener('transitionend', () => node.remove(), { once: true });
+  }, 5000);
+}
+
 // ---------- Supabase client ----------
 
 let supabaseClient = null;
@@ -201,7 +216,13 @@ el('logout-btn').addEventListener('click', async () => {
 // ---------- Accounts ----------
 
 async function loadAccounts() {
-  const summary = await api('/api/accounts');
+  let summary;
+  try {
+    summary = await api('/api/accounts');
+  } catch (err) {
+    toast(err.message, 'error');
+    return;
+  }
   const pct = summary.spaceTotal ? Math.min(100, (summary.spaceUsed / summary.spaceTotal) * 100) : 0;
   el('pool-bar-fill').style.width = `${pct}%`;
   el('pool-summary-text').textContent = summary.spaceTotal
@@ -210,9 +231,16 @@ async function loadAccounts() {
 
   const list = el('accounts-list');
   list.innerHTML = '';
-  for (const acc of summary.accounts) {
+
+  if (summary.accounts.length === 0) {
+    list.innerHTML = `<div class="accounts-empty muted">No MEGA accounts connected yet — add one to start pooling storage.</div>`;
+    return;
+  }
+
+  summary.accounts.forEach((acc, i) => {
     const card = document.createElement('div');
     card.className = 'account-card' + (acc.status === 'error' ? ' error' : '');
+    card.style.animationDelay = `${Math.min(i, 8) * 40}ms`;
     const accPct = acc.spaceTotal ? Math.min(100, (acc.spaceUsed / acc.spaceTotal) * 100) : 0;
     card.innerHTML = `
       <div class="acc-label">${escapeHtml(acc.label)}</div>
@@ -224,7 +252,7 @@ async function loadAccounts() {
       }
     `;
     list.appendChild(card);
-  }
+  });
 }
 
 el('add-account-btn').addEventListener('click', () => el('add-account-modal').classList.remove('hidden'));
@@ -233,6 +261,9 @@ el('cancel-add-account').addEventListener('click', () => el('add-account-modal')
 el('add-account-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   el('add-account-error').classList.add('hidden');
+  const submitBtn = e.target.querySelector('button[type="submit"]');
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Connecting…';
   try {
     await api('/api/accounts', {
       method: 'POST',
@@ -245,45 +276,66 @@ el('add-account-form').addEventListener('submit', async (e) => {
     });
     el('add-account-form').reset();
     el('add-account-modal').classList.add('hidden');
+    toast('MEGA account connected.', 'success');
     loadAccounts();
   } catch (err) {
     el('add-account-error').textContent = err.message;
     el('add-account-error').classList.remove('hidden');
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Connect account';
   }
 });
 
 // ---------- Files ----------
 
+const downloadIcon = '<svg viewBox="0 0 16 16" fill="none"><path d="M8 2v8M8 10L5 7M8 10l3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="square"/><path d="M3 12.5h10" stroke="currentColor" stroke-width="1.4"/></svg>';
+const shareIcon = '<svg viewBox="0 0 16 16" fill="none"><circle cx="12" cy="4" r="1.6" stroke="currentColor" stroke-width="1.3"/><circle cx="4" cy="8" r="1.6" stroke="currentColor" stroke-width="1.3"/><circle cx="12" cy="12" r="1.6" stroke="currentColor" stroke-width="1.3"/><path d="M5.4 7.2l5.2-2.4M5.4 8.8l5.2 2.4" stroke="currentColor" stroke-width="1.2"/></svg>';
+const linkIcon = '<svg viewBox="0 0 16 16" fill="none"><path d="M6.5 9.5l3-3M6 5H4.5A2.5 2.5 0 002 7.5v0A2.5 2.5 0 004.5 10H6M10 5h1.5A2.5 2.5 0 0114 7.5v0A2.5 2.5 0 0111.5 10H10" stroke="currentColor" stroke-width="1.3" stroke-linecap="square"/></svg>';
+const trashIcon = '<svg viewBox="0 0 16 16" fill="none"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5V13h7V4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="square" stroke-linejoin="miter"/></svg>';
+
 async function loadFiles() {
-  const { files } = await api('/api/files');
+  let files;
+  try {
+    ({ files } = await api('/api/files'));
+  } catch (err) {
+    toast(err.message, 'error');
+    return;
+  }
   const tbody = el('files-tbody');
   tbody.innerHTML = '';
   el('no-files-msg').classList.toggle('hidden', files.length > 0);
+  el('files-table-wrap').classList.toggle('hidden', files.length === 0);
 
-  for (const f of files) {
+  files.forEach((f, i) => {
     const tr = document.createElement('tr');
+    tr.style.animationDelay = `${Math.min(i, 10) * 30}ms`;
+    tr.className = 'row-in';
     const spread = f.accounts.map((a) => `<span class="chip">${escapeHtml(a)}</span>`).join('');
     const shareBtn = f.share
-      ? `<button data-id="${f.id}" class="share-btn link-btn">Link ready</button>`
-      : `<button data-id="${f.id}" class="share-btn secondary">Share</button>`;
+      ? `<button data-id="${f.id}" class="share-btn link-btn icon-btn" title="Share link ready">${linkIcon}Link ready</button>`
+      : `<button data-id="${f.id}" class="share-btn secondary icon-btn" title="Create a share link">${shareIcon}Share</button>`;
     tr.innerHTML = `
-      <td>${escapeHtml(f.name)}</td>
+      <td class="file-name-cell">${escapeHtml(f.name)}</td>
       <td>${formatBytes(f.size)}</td>
       <td>${spread}${f.chunkCount > f.accounts.length ? `<span class="chip">${f.chunkCount} parts</span>` : ''}</td>
       <td>${new Date(f.createdAt).toLocaleString()}</td>
       <td class="actions">
         ${shareBtn}
-        <button data-id="${f.id}" class="dl-btn secondary">Download</button>
-        <button data-id="${f.id}" class="del-btn">Delete</button>
+        <button data-id="${f.id}" class="dl-btn secondary icon-btn" title="Download">${downloadIcon}Download</button>
+        <button data-id="${f.id}" class="del-btn icon-btn" title="Delete">${trashIcon}Delete</button>
       </td>
     `;
     tbody.appendChild(tr);
-  }
+  });
 
   tbody.querySelectorAll('.dl-btn').forEach((btn) => {
     btn.addEventListener('click', async () => {
       // Downloads need the bearer token too, so we can't just navigate the browser
       // to the URL — fetch it as a blob (ok for reasonably sized files) instead.
+      const originalHtml = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = `${downloadIcon}Downloading…`;
       try {
         const token = await getAccessToken();
         const res = await fetch(`/api/files/${btn.dataset.id}/download`, {
@@ -303,7 +355,10 @@ async function loadFiles() {
         a.remove();
         URL.revokeObjectURL(url);
       } catch (err) {
-        alert(err.message);
+        toast(err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
       }
     });
   });
@@ -312,10 +367,11 @@ async function loadFiles() {
       if (!confirm('Delete this file from the pool? This cannot be undone.')) return;
       try {
         await api(`/api/files/${btn.dataset.id}`, { method: 'DELETE' });
+        toast('File deleted.', 'success');
         loadFiles();
         loadAccounts();
       } catch (err) {
-        alert(err.message);
+        toast(err.message, 'error');
       }
     });
   });
@@ -437,22 +493,24 @@ function uploadFile(file) {
       wrap.classList.add('hidden');
       fill.classList.remove('indeterminate');
       if (xhr.status >= 200 && xhr.status < 300) {
+        toast(`${file.name} uploaded.`, 'success');
         loadFiles();
         loadAccounts();
       } else {
         try {
-          alert(JSON.parse(xhr.responseText).error || 'Upload failed.');
+          toast(JSON.parse(xhr.responseText).error || 'Upload failed.', 'error');
         } catch {
-          alert('Upload failed.');
+          toast('Upload failed.', 'error');
         }
       }
     };
     xhr.onerror = () => {
       wrap.classList.add('hidden');
       fill.classList.remove('indeterminate');
-      alert(
+      toast(
         'Upload failed due to a network error. If this was a large file, it may have hit a connection timeout ' +
-          'partway through — try again on a faster/more stable connection.'
+          'partway through — try again on a faster/more stable connection.',
+        'error'
       );
     };
     xhr.send(formData);

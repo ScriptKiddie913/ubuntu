@@ -3,7 +3,10 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="description" content="MegaPool — combine multiple MEGA.nz accounts into one virtual storage pool." />
+<meta name="theme-color" content="#08090b" />
 <title>MegaPool — combined MEGA storage</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2308090b'/%3E%3Crect x='8' y='8' width='16' height='16' fill='%23ff4136'/%3E%3C/svg%3E" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -32,6 +35,7 @@
 
 <div id="login-screen" class="screen hidden">
   <div class="login-card">
+    <div class="brand-mark"></div>
     <h1>MegaPool</h1>
 
     <div class="auth-tabs">
@@ -69,7 +73,10 @@
     <h1>MegaPool</h1>
     <div class="topbar-right">
       <span id="user-email-badge" class="user-badge"></span>
-      <button id="logout-btn" class="ghost">Sign out</button>
+      <button id="logout-btn" class="ghost icon-btn">
+        <svg viewBox="0 0 20 20" fill="none"><path d="M7 4H4v12h3M13 10H8m5 0l-2.5-2.5M13 10l-2.5 2.5M11 4h3v3M14 13v3h-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="square"/></svg>
+        Sign out
+      </button>
     </div>
   </header>
 
@@ -77,14 +84,21 @@
     <section class="panel">
       <div class="panel-header">
         <h2>Combined storage</h2>
-        <button id="add-account-btn" class="secondary">+ Add MEGA account</button>
+        <button id="add-account-btn" class="secondary icon-btn">
+          <svg viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="square"/></svg>
+          Add MEGA account
+        </button>
       </div>
       <p class="muted">Accounts are permanent once added — there's no remove button by design, since files may have pieces stored on any account at any time. Only you can see or use the accounts you connect.</p>
       <div class="pool-bar-wrap">
         <div class="pool-bar"><div id="pool-bar-fill" class="pool-bar-fill"></div></div>
         <div id="pool-summary-text" class="muted"></div>
       </div>
-      <div id="accounts-list" class="accounts-list"></div>
+      <div id="accounts-list" class="accounts-list">
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+      </div>
     </section>
 
     <section class="panel">
@@ -93,6 +107,10 @@
       </div>
 
       <div id="dropzone" class="dropzone">
+        <svg class="dropzone-icon" viewBox="0 0 40 40" fill="none">
+          <path d="M20 26V10M20 10l-6 6M20 10l6 6" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter"/>
+          <path d="M8 28v4h24v-4" stroke="currentColor" stroke-width="2" stroke-linecap="square"/>
+        </svg>
         <p>Drag &amp; drop a file here, or</p>
         <label class="secondary file-input-label">
           Choose file
@@ -104,19 +122,26 @@
         </div>
       </div>
 
-      <table class="files-table">
-        <thead>
-          <tr><th>Name</th><th>Size</th><th>Spread across</th><th>Uploaded</th><th></th></tr>
-        </thead>
-        <tbody id="files-tbody"></tbody>
-      </table>
+      <div id="files-table-wrap" class="files-table-wrap">
+        <table class="files-table">
+          <thead>
+            <tr><th>Name</th><th>Size</th><th>Spread across</th><th>Uploaded</th><th></th></tr>
+          </thead>
+          <tbody id="files-tbody">
+            <tr class="skeleton-row"><td colspan="5"><div class="skeleton-line"></div></td></tr>
+            <tr class="skeleton-row"><td colspan="5"><div class="skeleton-line"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
       <div id="no-files-msg" class="files-empty hidden">
-        <div class="files-empty-mark"></div>
+        <svg viewBox="0 0 40 40" fill="none"><rect x="9" y="9" width="22" height="22" stroke="currentColor" stroke-width="2" stroke-dasharray="4 3"/></svg>
         <p class="muted">No files yet — upload something above.</p>
       </div>
     </section>
   </main>
 </div>
+
+<div id="toast-container" class="toast-container" aria-live="polite"></div>
 
 <div id="share-modal" class="modal hidden">
   <div class="modal-card">

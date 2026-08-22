@@ -7,6 +7,8 @@ const authRoutes = require('./src/routes/auth');
 const accountRoutes = require('./src/routes/accounts');
 const fileRoutes = require('./src/routes/files');
 const publicShareRoutes = require('./src/routes/publicShare');
+const dbRoutes = require('./src/routes/db');
+const { startKeepAlive } = require('./src/keepAlive');
 
 for (const name of ['SUPABASE_URL', 'SUPABASE_ANON_KEY', 'SUPABASE_SERVICE_ROLE_KEY', 'MASTER_KEY']) {
   if (!process.env[name]) {
@@ -20,6 +22,14 @@ app.set('trust proxy', 1); // needed for correct protocol/host behind Render's p
 
 app.use(express.json());
 
+// Cheap, unauthenticated, no external calls (Supabase/MEGA) — this is what both
+// the self-ping keep-alive (src/keepAlive.js) and any external uptime monitor
+// should hit. Deliberately lightweight so pinging it every few minutes forever
+// costs effectively nothing.
+app.get('/health', (req, res) => {
+  res.json({ ok: true, time: new Date().toISOString() });
+});
+
 // No server-side session middleware: auth is stateless. The frontend signs up/in
 // directly against Supabase Auth (via supabase-js + the anon key) and attaches the
 // resulting JWT as `Authorization: Bearer <token>` on every API call; requireAuth
@@ -27,6 +37,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/accounts', requireAuth, accountRoutes);
 app.use('/api/files', requireAuth, fileRoutes);
+app.use('/api/db', requireAuth, dbRoutes);
 app.use('/share', publicShareRoutes); // intentionally NOT behind requireAuth — this is the public link surface
 
 app.use(express.static(path.join(__dirname, 'public')));
@@ -57,6 +68,8 @@ server.requestTimeout = 30 * 60 * 1000; // 30 min to fully receive the incoming 
 server.headersTimeout = 30 * 60 * 1000 + 5000; // must be >= requestTimeout per Node's own constraint
 server.timeout = 0; // disable the separate idle-socket timeout for this flow
 server.keepAliveTimeout = 65 * 1000; // keep the usual keep-alive behavior for normal requests
+
+startKeepAlive();
 
 // Note: if this is deployed behind another proxy/CDN in front of Node (Render's
 // own edge, Cloudflare, nginx, etc.), that layer may have its own independent
