@@ -149,12 +149,19 @@ function showAuthTab(which) {
   el('signin-form').classList.toggle('hidden', !isSignin);
   el('signup-form').classList.toggle('hidden', isSignin);
   el('verify-notice').classList.add('hidden');
-  if (isSignin) el('signin-form').classList.remove('hidden');
-  else el('signup-form').classList.remove('hidden');
+
+  const indicator = el('auth-tab-indicator');
+  const activeTab = isSignin ? el('tab-signin') : el('tab-signup');
+  indicator.style.width = `${activeTab.offsetWidth}px`;
+  indicator.style.transform = `translateX(${activeTab.offsetLeft}px)`;
 }
 
 el('tab-signin').addEventListener('click', () => showAuthTab('signin'));
 el('tab-signup').addEventListener('click', () => showAuthTab('signup'));
+window.addEventListener('resize', () => {
+  const current = el('tab-signin').classList.contains('active') ? 'signin' : 'signup';
+  showAuthTab(current);
+});
 
 el('signin-form').addEventListener('submit', async (e) => {
   e.preventDefault();
