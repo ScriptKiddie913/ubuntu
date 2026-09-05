@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const path = require('path');
 
+const fs = require('fs');
 const requireAuth = require('./src/middleware/requireAuth');
 const requireAdmin = require('./src/middleware/requireAdmin');
 const authRoutes = require('./src/routes/auth');
@@ -11,8 +12,12 @@ const publicShareRoutes = require('./src/routes/publicShare');
 const dbRoutes = require('./src/routes/db');
 const adminRoutes = require('./src/routes/admin');
 const apiKeyRoutes = require('./src/routes/apiKeys');
+const docsRoutes = require('./src/routes/docs');
 const { startKeepAlive } = require('./src/keepAlive');
 const { startCloudHeartbeat } = require('./src/cloudHeartbeat');
+
+// Master logo path placed in /public/logo.png
+const PUBLIC_LOGO = path.join(__dirname, 'public', 'logo.png');
 
 for (const name of ['SUPABASE_URL', 'SUPABASE_ANON_KEY', 'SUPABASE_SERVICE_ROLE_KEY', 'MASTER_KEY']) {
   if (!process.env[name]) {
@@ -56,6 +61,30 @@ app.use('/api/keys', requireAuth, apiKeyRoutes);
 app.use('/api/admin', requireAuth, requireAdmin, adminRoutes);
 app.use('/share', publicShareRoutes); // intentionally NOT behind requireAuth — this is the public link surface
 
+// Interactive & AI Agent API Documentation
+app.use('/docs', docsRoutes);
+app.get('/llms.txt', (req, res) => res.redirect('/docs/llms.txt'));
+app.get('/openapi.json', (req, res) => res.redirect('/docs/openapi.json'));
+
+// Serve user-provided picture in /public/logo.png for logo and favicon
+app.get('/logo.png', (req, res) => {
+  if (fs.existsSync(PUBLIC_LOGO)) return res.sendFile(PUBLIC_LOGO);
+  res.status(404).send('Logo not found at /public/logo.png. Please put your picture at public/logo.png.');
+});
+
+app.get('/public/logo.png', (req, res) => {
+  if (fs.existsSync(PUBLIC_LOGO)) return res.sendFile(PUBLIC_LOGO);
+  res.status(404).send('Logo not found at /public/logo.png.');
+});
+
+app.get('/favicon.ico', (req, res) => {
+  const icoPath = path.join(__dirname, 'public', 'favicon.ico');
+  if (fs.existsSync(icoPath)) return res.sendFile(icoPath);
+  if (fs.existsSync(PUBLIC_LOGO)) return res.sendFile(PUBLIC_LOGO);
+  res.status(404).end();
+});
+
+app.use('/public', express.static(path.join(__dirname, 'public')));
 app.use(express.static(path.join(__dirname, 'public')));
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));

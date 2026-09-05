@@ -165,26 +165,17 @@ body::before {
   box-shadow: var(--shadow-md);
 }
 
-.boot-mark {
-  width: 36px;
-  height: 36px;
-  background: var(--accent);
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.boot-mark-inner {
-  width: 14px;
-  height: 14px;
-  background: var(--bg-1);
-  animation: boot-pulse 1.6s ease-in-out infinite alternate;
+.boot-logo {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  display: block;
+  animation: boot-pulse 1.8s ease-in-out infinite alternate;
 }
 
 @keyframes boot-pulse {
-  from { transform: scale(0.7); opacity: 0.6; }
-  to { transform: scale(1.1); opacity: 1; }
+  from { transform: scale(0.92); opacity: 0.8; }
+  to { transform: scale(1.04); opacity: 1; }
 }
 
 .boot-spinner { display: flex; gap: 4px; }
@@ -299,28 +290,15 @@ body::before {
   margin-bottom: 16px;
 }
 
-.brand-symbol {
-  width: 44px;
-  height: 44px;
-  background: var(--accent);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.brand-logo {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  display: block;
   flex-shrink: 0;
-}
-
-.brand-symbol-box {
-  width: 18px;
-  height: 18px;
+  border: 1px solid var(--edge);
   background: var(--bg-1);
-  position: relative;
-}
-
-.brand-symbol-box::after {
-  content: '';
-  position: absolute;
-  top: 4px; left: 4px; right: 4px; bottom: 4px;
-  background: var(--accent);
+  padding: 3px;
 }
 
 .hero-title {
@@ -685,20 +663,15 @@ button:disabled {
   gap: 12px;
 }
 
-.topbar-symbol {
-  width: 26px;
-  height: 26px;
-  background: var(--accent);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.topbar-symbol::after {
-  content: '';
-  width: 10px;
-  height: 10px;
+.topbar-logo {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  display: block;
+  flex-shrink: 0;
+  border: 1px solid var(--edge);
   background: var(--bg-1);
+  padding: 2px;
 }
 
 .topbar-title-wrap {

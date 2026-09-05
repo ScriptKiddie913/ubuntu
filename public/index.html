@@ -6,7 +6,9 @@
 <meta name="description" content="SoTaNik_AI Data Lake — Unified distributed virtual storage combining multiple nodes into one high-performance virtual drive." />
 <meta name="theme-color" content="#f5f2eb" />
 <title>SoTaNik_AI Data Lake — Architectural Virtual Storage</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23292524'/%3E%3Crect x='8' y='8' width='16' height='16' fill='%23f5f2eb'/%3E%3Crect x='12' y='12' width='8' height='8' fill='%23292524'/%3E%3C/svg%3E" />
+<link rel="icon" type="image/png" href="/logo.png" />
+<link rel="shortcut icon" type="image/png" href="/logo.png" />
+<link rel="apple-touch-icon" href="/logo.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -18,8 +20,8 @@
 <!-- Boot Screen -->
 <div id="boot-screen" class="screen boot-screen">
   <div class="boot-inner">
-    <div class="boot-mark">
-      <div class="boot-mark-inner"></div>
+    <div class="boot-mark-wrap">
+      <img src="/logo.png" alt="SoTaNik_AI Logo" class="boot-logo" />
     </div>
     <div class="boot-spinner">
       <span></span><span></span><span></span><span></span>
@@ -47,9 +49,7 @@
       </div>
       
       <div class="hero-brand-row">
-        <div class="brand-symbol">
-          <div class="brand-symbol-box"></div>
-        </div>
+        <img src="/logo.png" alt="SoTaNik_AI Logo" class="brand-logo" />
         <h1 class="hero-title">SoTaNik_AI<br/><span class="hero-title-sub">Data Lake</span></h1>
       </div>
 
@@ -193,7 +193,7 @@
       </button>
 
       <div class="topbar-brand">
-        <div class="topbar-symbol"></div>
+        <img src="/logo.png" alt="SoTaNik_AI Logo" class="topbar-logo" />
         <div class="topbar-title-wrap">
           <span class="topbar-title">SoTaNik_AI</span>
           <span class="topbar-badge">Data Lake</span>
@@ -206,6 +206,11 @@
     </div>
 
     <div class="topbar-right">
+      <!-- API & AI Agent Docs Link -->
+      <a href="/docs" target="_blank" class="topbar-util-btn" style="text-decoration: none;" title="API & AI Agent Documentation (/docs)">
+        <span>API Docs</span>
+      </a>
+
       <!-- Theme Mode Switcher -->
       <button id="theme-toggle-btn" class="topbar-util-btn" title="Toggle Matte Theme (Warm Cream / Deep Obsidian) [M]">
         <span id="theme-btn-label">Charcoal</span>
