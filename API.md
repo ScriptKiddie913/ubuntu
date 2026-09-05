@@ -17,16 +17,31 @@ https://<your-sotanik-ai-data-lake-deployment>
 
 ## Authentication
 
-Every `/api/db/*` request requires:
+API requests can be authenticated in two ways:
+
+### 1. Programmatic API Keys (Recommended for Scrapers, Crawlers & CLI Scripts)
+Generate an API key directly from the console sidebar under **API Keys (Scrapers)**. Pass it in either header:
+
+```bash
+# Option A: X-API-Key header
+curl -H "X-API-Key: sot_live_abcdef123456..." \
+  "https://your-deployment/api/files"
+
+# Option B: Authorization Bearer header
+curl -H "Authorization: Bearer sot_live_abcdef123456..." \
+  "https://your-deployment/api/files/FILE_ID/download" -o object.bin
+```
+
+Unlike short-lived JWT tokens, programmatic API keys do not expire unless manually revoked, making them ideal for background workers, automated ingestion pipelines, and crawlers.
+
+### 2. Supabase JWT Bearer Token (Browser & Web App)
+Every request can also accept a standard Supabase JWT:
 
 ```
 Authorization: Bearer <supabase access token>
 ```
 
-This is the same JWT the browser gets from Supabase Auth after sign-in. For a
-script/server calling these endpoints (not a browser), sign in the same way
-using [supabase-js](https://supabase.com/docs/reference/javascript/auth-signinwithpassword)
-or a direct call to Supabase's auth API with a dedicated account's email/password:
+For scripts calling these endpoints with Supabase credentials:
 
 ```bash
 curl -X POST 'https://YOUR-PROJECT-REF.supabase.co/auth/v1/token?grant_type=password' \
@@ -34,11 +49,6 @@ curl -X POST 'https://YOUR-PROJECT-REF.supabase.co/auth/v1/token?grant_type=pass
   -H "Content-Type: application/json" \
   -d '{"email":"you@example.com","password":"your-password"}'
 ```
-
-The response's `access_token` is what you pass as the Bearer token below.
-**It expires** (Supabase's default is 1 hour) — the response also includes a
-`refresh_token`; use Supabase's token refresh endpoint to get a new
-`access_token` without re-sending the password each time.
 
 ## Chunk sizing — the important part
 

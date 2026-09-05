@@ -182,9 +182,11 @@ async function showApp() {
   const { data } = await supabaseClient.auth.getUser();
   const userEmail = (data && data.user && data.user.email) || '';
   el('user-email-badge').textContent = userEmail;
+  initSidebar();
   setupAdminConsole(userEmail);
   loadAccounts();
   loadFiles();
+  loadApiKeys();
   renderAuditLogs();
 }
 
@@ -849,10 +851,14 @@ window.addEventListener('keydown', (e) => {
   } else if (e.key === '?' || (e.shiftKey && e.key === '/')) {
     e.preventDefault();
     el('shortcuts-modal')?.classList.remove('hidden');
+  } else if (e.key === 'b' || e.key === 'B') {
+    e.preventDefault();
+    toggleSidebar();
   } else if (e.key === 'r' || e.key === 'R') {
     e.preventDefault();
     loadFiles();
     loadAccounts();
+    loadApiKeys();
     toast('Data Lake refreshed.', 'info');
   }
 });
@@ -1454,6 +1460,155 @@ function renderAdminPublicNodes(nodes) {
     });
   });
 }
+
+// ============================================================================
+// Collapsible Sidebar Management
+// ============================================================================
+function initSidebar() {
+  const saved = localStorage.getItem('sotanik_lake_sidebar') || 'open';
+  const sidebar = el('app-sidebar');
+  if (sidebar) {
+    sidebar.classList.toggle('collapsed', saved === 'collapsed');
+  }
+}
+
+function toggleSidebar() {
+  const sidebar = el('app-sidebar');
+  if (!sidebar) return;
+  const isCollapsed = sidebar.classList.toggle('collapsed');
+  localStorage.setItem('sotanik_lake_sidebar', isCollapsed ? 'collapsed' : 'open');
+  toast(`Sidebar ${isCollapsed ? 'collapsed' : 'expanded'} [B]`, 'info');
+}
+
+el('sidebar-toggle-btn')?.addEventListener('click', toggleSidebar);
+
+// ============================================================================
+// Programmatic API Keys Management (Scrapers & Scripts)
+// ============================================================================
+let cachedApiKeys = [];
+
+async function loadApiKeys() {
+  const container = el('api-keys-list');
+  if (!container) return;
+  try {
+    const { keys } = await api('/api/keys');
+    cachedApiKeys = keys || [];
+    renderApiKeys(cachedApiKeys);
+  } catch (err) {
+    container.innerHTML = `<div class="error" style="font-size:10.5px;">${escapeHtml(err.message)}</div>`;
+  }
+}
+
+function renderApiKeys(keys) {
+  const container = el('api-keys-list');
+  if (!container) return;
+
+  if (keys.length === 0) {
+    container.innerHTML = `
+      <div class="muted" style="font-size: 10.5px; padding: 4px 0;">
+        No active API keys. Click "+ New Key" to create credentials for scrapers/scripts.
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = keys.map((k) => `
+    <div class="api-key-row">
+      <div class="api-key-info">
+        <span class="api-key-name">${escapeHtml(k.name || 'API Key')}</span>
+        <span class="api-key-prefix">${escapeHtml(k.key_prefix)}</span>
+      </div>
+      <div class="api-key-actions">
+        <button class="ghost btn-xs revoke-key-btn" data-key-id="${escapeHtml(k.id)}" title="Revoke Key" style="color: var(--danger); font-weight: 700; padding: 0 4px;">&times;</button>
+      </div>
+    </div>
+  `).join('');
+
+  // Wire Revoke Buttons
+  container.querySelectorAll('.revoke-key-btn').forEach((btn) => {
+    btn.addEventListener('click', async (e) => {
+      const keyId = e.currentTarget.getAttribute('data-key-id');
+      if (!confirm('Revoke this API key? External scrapers and automated scripts using this key will immediately lose access.')) {
+        return;
+      }
+      try {
+        await api(`/api/keys/${keyId}`, { method: 'DELETE' });
+        toast('API key revoked immediately.', 'info');
+        recordAuditLog('API_KEY', 'Revoked programmatic scraper API key');
+        loadApiKeys();
+      } catch (err) {
+        toast(`Failed to revoke key: ${err.message}`, 'error');
+      }
+    });
+  });
+}
+
+// Generate Key Modal Events
+el('generate-key-btn')?.addEventListener('click', () => {
+  el('api-key-prompt-form')?.reset();
+  el('api-key-prompt-modal')?.classList.remove('hidden');
+});
+
+el('cancel-api-key-prompt')?.addEventListener('click', () => {
+  el('api-key-prompt-modal')?.classList.add('hidden');
+});
+
+el('api-key-prompt-form')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const name = (el('api-key-name-input')?.value || '').trim();
+  const submitBtn = e.target.querySelector('button[type="submit"]');
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Generating…';
+  }
+
+  try {
+    const { key } = await api('/api/keys', {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+    });
+
+    el('api-key-prompt-modal')?.classList.add('hidden');
+    el('api-key-prompt-form')?.reset();
+
+    // Show generated key success modal
+    if (el('generated-key-output')) {
+      el('generated-key-output').value = key.secret;
+    }
+    if (el('curl-key-placeholder')) {
+      el('curl-key-placeholder').textContent = key.secret;
+    }
+    el('api-key-created-modal')?.classList.remove('hidden');
+
+    toast('API key created successfully!', 'success');
+    recordAuditLog('API_KEY', `Created API key: ${key.name}`);
+    loadApiKeys();
+  } catch (err) {
+    toast(`Failed to generate key: ${err.message}`, 'error');
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Generate Key';
+    }
+  }
+});
+
+el('copy-generated-key-btn')?.addEventListener('click', async () => {
+  const input = el('generated-key-output');
+  if (!input) return;
+  input.select();
+  try {
+    await navigator.clipboard.writeText(input.value);
+    const btn = el('copy-generated-key-btn');
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(() => { btn.textContent = orig; }, 1800);
+    toast('API key copied to clipboard.', 'success');
+  } catch {}
+});
+
+el('close-api-key-modal')?.addEventListener('click', () => {
+  el('api-key-created-modal')?.classList.add('hidden');
+});
 
 // ---------- Boot Initializer ----------
 init().catch((err) => {

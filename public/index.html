@@ -182,29 +182,38 @@
 </div>
 
 <!-- Dashboard Screen -->
+<!-- Dashboard Screen -->
 <div id="app-screen" class="screen hidden">
   <header class="topbar">
-    <div class="topbar-brand">
-      <div class="topbar-symbol"></div>
-      <div class="topbar-title-wrap">
-        <span class="topbar-title">SoTaNik_AI</span>
-        <span class="topbar-badge">Data Lake Console</span>
-      </div>
-      <div class="lake-status-tag">
-        <span class="pulse-indicator"></span>
-        <span>Operational</span>
+    <div class="topbar-left">
+      <!-- Collapsible Sidebar Toggle Button -->
+      <button id="sidebar-toggle-btn" class="topbar-util-btn" title="Toggle Cluster Sidebar [B]">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" stroke="currentColor" stroke-width="1.4"/><path d="M6 2v12" stroke="currentColor" stroke-width="1.4"/></svg>
+        <span class="sidebar-btn-label">Sidebar</span>
+      </button>
+
+      <div class="topbar-brand">
+        <div class="topbar-symbol"></div>
+        <div class="topbar-title-wrap">
+          <span class="topbar-title">SoTaNik_AI</span>
+          <span class="topbar-badge">Data Lake</span>
+        </div>
+        <div class="lake-status-tag">
+          <span class="pulse-indicator"></span>
+          <span>Online</span>
+        </div>
       </div>
     </div>
 
     <div class="topbar-right">
-      <!-- Feature 20: Theme Mode Switcher -->
+      <!-- Theme Mode Switcher -->
       <button id="theme-toggle-btn" class="topbar-util-btn" title="Toggle Matte Theme (Warm Cream / Deep Obsidian) [M]">
-        <span id="theme-btn-label">Charcoal Mode</span>
+        <span id="theme-btn-label">Charcoal</span>
       </button>
 
-      <!-- Feature 19: Keyboard Shortcuts Trigger -->
+      <!-- Keyboard Shortcuts Trigger -->
       <button id="shortcuts-modal-btn" class="topbar-util-btn" title="Keyboard Shortcuts [?]">
-        <span>Shortcuts [?]</span>
+        <span>Keys [?]</span>
       </button>
 
       <!-- Super-Admin Console Toggle (Shown only for sagnik.saha.raptor@gmail.com) -->
@@ -212,9 +221,9 @@
         <span>Admin Console</span>
       </button>
 
-      <!-- Feature 16: Vault Security Trigger -->
+      <!-- Vault Security Trigger -->
       <button id="vault-info-btn" class="topbar-util-btn" title="Inspect Security Vault">
-        <span>Vault Security</span>
+        <span>Vault</span>
       </button>
 
       <div class="user-chip">
@@ -229,302 +238,276 @@
     </div>
   </header>
 
-  <main>
-    <!-- Super-Admin Command Section (Visible exclusively to sagnik.saha.raptor@gmail.com) -->
-    <section id="admin-section" class="panel hidden" style="border-color: var(--accent-bronze); background: var(--bg-1);">
-      <div class="panel-header">
-        <div>
-          <div class="panel-category" style="color: var(--accent-bronze);">SUPER-ADMIN COMMAND CENTER</div>
-          <h2>Cluster Tenant &amp; Public Storage Control</h2>
+  <div class="app-layout">
+    <!-- Collapsible Cluster Infrastructure Sidebar -->
+    <aside id="app-sidebar" class="app-sidebar">
+      <div class="sidebar-content">
+        <!-- Section 1: Mini Telemetry Matrix -->
+        <div class="sidebar-box">
+          <div class="sidebar-box-header">
+            <span class="sidebar-title">POOL CAPACITY &amp; METRICS</span>
+          </div>
+
+          <div class="matrix-grid">
+            <div class="matrix-tile">
+              <span class="matrix-label">Total Pool</span>
+              <span id="stat-total-capacity" class="matrix-val">0 B</span>
+              <span id="stat-node-count" class="matrix-sub">0 nodes</span>
+            </div>
+            <div class="matrix-tile">
+              <span class="matrix-label">Ingested</span>
+              <span id="stat-used-capacity" class="matrix-val">0 B</span>
+              <span id="stat-utilization-pct" class="matrix-sub">0%</span>
+            </div>
+            <div class="matrix-tile">
+              <span class="matrix-label">Objects</span>
+              <span id="stat-file-count" class="matrix-val">0</span>
+              <span id="stat-shard-count" class="matrix-sub">0 shards</span>
+            </div>
+            <div class="matrix-tile">
+              <span class="matrix-label">Free Quota</span>
+              <span id="stat-free-capacity" class="matrix-val">0 B</span>
+              <span class="matrix-sub">Available</span>
+            </div>
+          </div>
+
+          <div class="sidebar-bar-wrap">
+            <div class="mini-bar"><div id="pool-bar-fill" class="mini-bar-fill"></div></div>
+            <div id="pool-summary-text" class="sidebar-bar-text">Calculating quota…</div>
+          </div>
+
+          <!-- Compact Storage Balancer Advisor -->
+          <div class="sidebar-advisor-pill">
+            <span class="advisor-tag">ADVISOR:</span>
+            <span id="lake-advisor-text" class="advisor-text">Cluster operational.</span>
+          </div>
         </div>
-        <div class="panel-header-actions">
-          <button id="admin-run-heartbeat-btn" class="secondary icon-btn" title="Ping all cloud accounts immediately">
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.4"/><path d="M8 5v3l2 2" stroke="currentColor" stroke-width="1.2"/></svg>
-            <span>Run Inactivity Ping Sweep</span>
-          </button>
-          <button id="admin-mount-public-btn" class="primary-btn icon-btn" title="Add cloud node to Public Storage pool">
-            <svg viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/></svg>
-            <span>Mount Public Cloud Node</span>
-          </button>
+
+        <!-- Section 2: Storage Nodes Topology -->
+        <div class="sidebar-box">
+          <div class="sidebar-box-header">
+            <span class="sidebar-title">MOUNTED STORAGE NODES</span>
+            <button id="add-account-btn" class="primary-btn btn-xs icon-btn" title="Mount Storage Node [N]">
+              <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><path d="M8 2v12M2 8h12" stroke="currentColor" stroke-width="2"/></svg>
+              <span>Mount Node</span>
+            </button>
+          </div>
+
+          <div id="active-node-banner" class="active-node-banner hidden" style="margin-bottom: 6px;">
+            <span>Filtered: <strong id="active-node-label-text"></strong></span>
+            <button id="clear-node-filter" class="nodes-filter-reset">Show all</button>
+            <button id="reset-node-filter-btn" class="nodes-filter-reset hidden">Reset</button>
+          </div>
+
+          <div id="accounts-list" class="sidebar-accounts-list">
+            <div class="skeleton-card" style="height: 60px;"></div>
+          </div>
+        </div>
+
+        <!-- Section 3: Programmatic API Keys for Scrapers & Scripts -->
+        <div class="sidebar-box">
+          <div class="sidebar-box-header">
+            <span class="sidebar-title">API KEYS (SCRAPERS)</span>
+            <button id="generate-key-btn" class="secondary btn-xs icon-btn" title="Create API key for external fetching">
+              <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><path d="M8 2v12M2 8h12" stroke="currentColor" stroke-width="2"/></svg>
+              <span>New Key</span>
+            </button>
+          </div>
+
+          <div id="api-keys-list" class="sidebar-api-keys-list">
+            <div class="muted" style="font-size: 11px; padding: 4px 0;">No API keys generated yet.</div>
+          </div>
+        </div>
+
+        <!-- Section 4: Activity Audit Timeline -->
+        <div class="sidebar-box">
+          <div class="sidebar-box-header">
+            <span class="sidebar-title">CLUSTER AUDIT LOG</span>
+            <button id="clear-activity-btn" class="ghost btn-xs">Clear</button>
+          </div>
+          <div id="activity-timeline" class="activity-timeline sidebar-timeline">
+            <div class="timeline-item">
+              <div class="timeline-item-left">
+                <span class="timeline-type-tag">INIT</span>
+                <span>Data lake ready.</span>
+              </div>
+              <span class="timeline-time">Live</span>
+            </div>
+          </div>
         </div>
       </div>
+    </aside>
 
-      <p class="panel-desc">
-        Administrative governance for <strong>sagnik.saha.raptor@gmail.com</strong>. Manage registered tenants, completely wipe user accounts and their associated cloud files, and manage the Public Storage pool for manual tenant capacity allocation.
-      </p>
-
-      <!-- Cloud Heartbeat Status Banner -->
-      <div class="pool-bar-wrap" style="margin-bottom: 16px;">
-        <div class="pool-bar-metrics-row">
-          <span class="pool-metric-title">CLOUD INACTIVITY PROTECTION STATUS</span>
-          <span id="admin-heartbeat-status-text" class="pool-metric-val">Checking heartbeat telemetry…</span>
+    <!-- Main Workspace Stage -->
+    <main class="app-main">
+      <!-- Super-Admin Command Section (Visible exclusively to sagnik.saha.raptor@gmail.com) -->
+      <section id="admin-section" class="panel compact-admin-panel hidden" style="border-color: var(--accent-bronze); background: var(--bg-1);">
+        <div class="panel-header">
+          <div>
+            <div class="panel-category" style="color: var(--accent-bronze);">SUPER-ADMIN COMMAND CENTER</div>
+            <h2 style="font-size: 15px;">Cluster Tenant &amp; Public Storage Control</h2>
+          </div>
+          <div class="panel-header-actions">
+            <button id="admin-run-heartbeat-btn" class="secondary btn-sm icon-btn" title="Ping all cloud accounts immediately">
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.4"/><path d="M8 5v3l2 2" stroke="currentColor" stroke-width="1.2"/></svg>
+              <span>Ping Sweep</span>
+            </button>
+            <button id="admin-mount-public-btn" class="primary-btn btn-sm icon-btn" title="Add cloud node to Public Storage pool">
+              <svg width="12" height="12" viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/></svg>
+              <span>Mount Public Node</span>
+            </button>
+          </div>
         </div>
-      </div>
 
-      <!-- Super-Admin Navigation Tabs -->
-      <div class="filter-pills-row" style="margin-bottom: 14px;">
-        <button id="admin-tab-users" class="filter-pill active">Tenant Users (<span id="admin-user-count">0</span>)</button>
-        <button id="admin-tab-public" class="filter-pill">Public Storage Nodes (<span id="admin-public-node-count">0</span>)</button>
-      </div>
+        <!-- Cloud Heartbeat Status Banner -->
+        <div class="pool-bar-wrap" style="margin-bottom: 12px; padding: 8px 10px; background: var(--bg-2); border: 1px solid var(--edge);">
+          <div class="pool-bar-metrics-row" style="font-size: 11px;">
+            <span class="pool-metric-title">CLOUD LIVENESS TELEMETRY</span>
+            <span id="admin-heartbeat-status-text" class="pool-metric-val">Checking heartbeat telemetry…</span>
+          </div>
+        </div>
 
-      <!-- Admin Tab 1: Users Table -->
-      <div id="admin-users-view">
-        <div class="files-table-wrap">
+        <!-- Super-Admin Navigation Tabs -->
+        <div class="filter-pills-row" style="margin-bottom: 10px;">
+          <button id="admin-tab-users" class="filter-pill active">Tenant Users (<span id="admin-user-count">0</span>)</button>
+          <button id="admin-tab-public" class="filter-pill">Public Storage Nodes (<span id="admin-public-node-count">0</span>)</button>
+        </div>
+
+        <!-- Admin Tab 1: Users Table -->
+        <div id="admin-users-view">
+          <div class="files-table-wrap">
+            <table class="files-table">
+              <thead>
+                <tr>
+                  <th>Tenant Email</th>
+                  <th>User ID</th>
+                  <th>Objects</th>
+                  <th>Personal Nodes</th>
+                  <th>Allocated Public Nodes</th>
+                  <th class="text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="admin-users-tbody">
+                <tr class="skeleton-row"><td colspan="6"><div class="skeleton-line"></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Admin Tab 2: Public Storage Nodes -->
+        <div id="admin-public-view" class="hidden">
+          <div id="admin-public-nodes-list" class="accounts-list" style="margin-bottom: 10px;">
+            <div class="skeleton-card"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Central Data Lake Objects Panel -->
+      <section class="panel compact-files-panel">
+        <!-- Compact Horizontal Ingestion Dropstrip -->
+        <div id="dropzone" class="dropzone compact-dropzone">
+          <div class="dropzone-compact-content">
+            <div class="dropzone-icon-box">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M12 16V4M12 4L8 8M12 4l4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/>
+                <path d="M4 18v2h16v-2" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/>
+              </svg>
+            </div>
+            <div class="dropzone-compact-text">
+              <span class="dropzone-main-text">Drag &amp; drop files here to shard across lake nodes</span>
+              <span class="dropzone-sub-text">Single or batch ingestion supported</span>
+            </div>
+            <label class="primary-btn btn-sm file-input-label">
+              <span>Choose Files [U]</span>
+              <input id="file-input" type="file" multiple hidden />
+            </label>
+          </div>
+          <div id="upload-progress-wrap" class="upload-progress-wrap hidden">
+            <div class="upload-progress-bar"><div id="upload-progress-fill"></div></div>
+            <span id="upload-progress-text" class="upload-status-text"></span>
+          </div>
+        </div>
+
+        <!-- High-Density Toolbar: Live Search, Sorting, Export & Views -->
+        <div class="objects-toolbar compact-toolbar">
+          <div class="toolbar-primary-row">
+            <div class="search-input-wrap">
+              <svg class="search-icon" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.4"/><path d="M10.5 10.5l3 3" stroke="currentColor" stroke-width="1.4"/></svg>
+              <input id="object-search-input" class="search-input" type="text" placeholder="Search objects by name, extension, or shard label…" />
+              <span class="search-shortcut-hint">/</span>
+            </div>
+
+            <div class="toolbar-controls">
+              <select id="sort-select" class="sort-select">
+                <option value="date-desc">Newest</option>
+                <option value="date-asc">Oldest</option>
+                <option value="size-desc">Largest</option>
+                <option value="size-asc">Smallest</option>
+                <option value="name-asc">A to Z</option>
+                <option value="name-desc">Z to A</option>
+                <option value="shards-desc">Shards</option>
+              </select>
+
+              <button id="export-manifest-json" class="secondary btn-sm icon-btn" title="Export Manifest JSON">
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M3 13h10M8 2v8M5 7l3 3 3-3" stroke="currentColor" stroke-width="1.4"/></svg>
+                <span>Export</span>
+              </button>
+
+              <div class="view-toggle-wrap">
+                <button id="view-table-btn" class="view-toggle-btn active" title="Table View [V]">
+                  <svg viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="10" stroke="currentColor" stroke-width="1.4"/><path d="M2 7h12M6 7v6" stroke="currentColor" stroke-width="1.2"/></svg>
+                </button>
+                <button id="view-grid-btn" class="view-toggle-btn" title="Grid View [V]">
+                  <svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" stroke="currentColor" stroke-width="1.4"/><rect x="9" y="2" width="5" height="5" stroke="currentColor" stroke-width="1.4"/><rect x="2" y="9" width="5" height="5" stroke="currentColor" stroke-width="1.4"/><rect x="9" y="9" width="5" height="5" stroke="currentColor" stroke-width="1.4"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Category Filter Pills -->
+          <div class="filter-pills-row">
+            <button class="filter-pill active" data-filter="all">All (<span id="count-all">0</span>)</button>
+            <button class="filter-pill" data-filter="dataset">Datasets (<span id="count-dataset">0</span>)</button>
+            <button class="filter-pill" data-filter="document">Docs (<span id="count-document">0</span>)</button>
+            <button class="filter-pill" data-filter="archive">Archives (<span id="count-archive">0</span>)</button>
+            <button class="filter-pill" data-filter="media">Media (<span id="count-media">0</span>)</button>
+            <button class="filter-pill" data-filter="code">Code (<span id="count-code">0</span>)</button>
+          </div>
+        </div>
+
+        <!-- Files Table View -->
+        <div id="files-table-wrap" class="files-table-wrap">
           <table class="files-table">
             <thead>
               <tr>
-                <th>Tenant Email</th>
-                <th>User ID</th>
-                <th>Objects</th>
-                <th>Personal Nodes</th>
-                <th>Allocated Public Nodes</th>
-                <th class="text-right">Admin Actions</th>
+                <th data-sort-key="name">Object Name</th>
+                <th data-sort-key="size">Size</th>
+                <th data-sort-key="shards">Shards</th>
+                <th data-sort-key="date">Ingested</th>
+                <th class="text-right">Actions</th>
               </tr>
             </thead>
-            <tbody id="admin-users-tbody">
-              <tr class="skeleton-row"><td colspan="6"><div class="skeleton-line"></div></td></tr>
+            <tbody id="files-tbody">
+              <tr class="skeleton-row"><td colspan="5"><div class="skeleton-line"></div></td></tr>
+              <tr class="skeleton-row"><td colspan="5"><div class="skeleton-line"></div></td></tr>
             </tbody>
           </table>
         </div>
-      </div>
 
-      <!-- Admin Tab 2: Public Storage Nodes -->
-      <div id="admin-public-view" class="hidden">
-        <div id="admin-public-nodes-list" class="accounts-list" style="margin-bottom: 14px;">
-          <div class="skeleton-card"></div>
-        </div>
-      </div>
-    </section>
+        <!-- Files Grid View -->
+        <div id="files-grid-wrap" class="files-grid-wrap hidden"></div>
 
-    <!-- Feature 6: Analytics Dashboard Scorecard Grid -->
-    <section class="analytics-scorecard-grid">
-      <div class="scorecard-item">
-        <div class="scorecard-top">
-          <span class="scorecard-label">Total Pool Capacity</span>
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="10" stroke="currentColor" stroke-width="1.4"/><path d="M2 7h12" stroke="currentColor" stroke-width="1.2"/></svg>
-        </div>
-        <div id="stat-total-capacity" class="scorecard-value">0 B</div>
-        <div id="stat-node-count" class="scorecard-meta">0 storage nodes mounted</div>
-      </div>
-
-      <div class="scorecard-item">
-        <div class="scorecard-top">
-          <span class="scorecard-label">Lake Storage Ingested</span>
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 2v9M8 11l-3-3M8 11l3-3M3 13h10" stroke="currentColor" stroke-width="1.4"/></svg>
-        </div>
-        <div id="stat-used-capacity" class="scorecard-value">0 B</div>
-        <div id="stat-utilization-pct" class="scorecard-meta">0% capacity utilized</div>
-      </div>
-
-      <div class="scorecard-item">
-        <div class="scorecard-top">
-          <span class="scorecard-label">Total Objects</span>
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="3" y="2" width="10" height="12" stroke="currentColor" stroke-width="1.4"/><path d="M6 6h4M6 9h4" stroke="currentColor" stroke-width="1.2"/></svg>
-        </div>
-        <div id="stat-file-count" class="scorecard-value">0</div>
-        <div id="stat-shard-count" class="scorecard-meta">0 total sharded pieces</div>
-      </div>
-
-      <div class="scorecard-item">
-        <div class="scorecard-top">
-          <span class="scorecard-label">Free Lake Quota</span>
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.4"/><path d="M8 5v3l2 2" stroke="currentColor" stroke-width="1.2"/></svg>
-        </div>
-        <div id="stat-free-capacity" class="scorecard-value">0 B</div>
-        <div class="scorecard-meta">Available for ingestion</div>
-      </div>
-    </section>
-
-    <!-- Storage Nodes & Capacity Panel -->
-    <section class="panel">
-      <div class="panel-header">
-        <div class="panel-header-left">
-          <div class="panel-category">CLUSTER TOPOLOGY</div>
-          <h2>Distributed Storage Nodes</h2>
-        </div>
-        <div class="panel-header-actions">
-          <button id="add-account-btn" class="primary-btn icon-btn" title="Mount a new storage node [N]">
-            <svg viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/></svg>
-            <span>Mount Storage Node</span>
-          </button>
-        </div>
-      </div>
-
-      <p class="panel-desc">
-        Active storage nodes form an immutable, sharded virtual drive. Files exceeding chunk thresholds are sharded across nodes automatically and reassembled seamlessly during streaming.
-      </p>
-
-      <div class="pool-bar-wrap">
-        <div class="pool-bar-metrics-row">
-          <span class="pool-metric-title">AGGREGATE LAKE UTILIZATION</span>
-          <span id="pool-summary-text" class="pool-metric-val">Calculating lake quota…</span>
-        </div>
-        <div class="pool-bar">
-          <div id="pool-bar-fill" class="pool-bar-fill"></div>
-        </div>
-        
-        <!-- Feature 7: Storage Load Balancer Advisor -->
-        <div class="lake-advisor-box">
-          <div>
-            <span class="lake-advisor-tag">LAKE ADVISOR:</span>
-            <span id="lake-advisor-text">Cluster balanced. All mounted nodes operating within target threshold.</span>
+        <!-- Empty State -->
+        <div id="no-files-msg" class="files-empty hidden">
+          <div class="empty-icon-wrap">
+            <svg viewBox="0 0 40 40" fill="none"><rect x="8" y="8" width="24" height="24" stroke="currentColor" stroke-width="1.8" stroke-dasharray="4 4"/><path d="M15 20h10M20 15v10" stroke="currentColor" stroke-width="1.6" stroke-linecap="square"/></svg>
           </div>
-          <span class="muted" style="font-family: 'JetBrains Mono', monospace; font-size: 11px;">Bin-Packing: Active</span>
+          <p class="empty-title">No Objects Match Filter</p>
+          <p class="empty-desc">Ingest datasets or files using the upload zone above or clear current filters.</p>
         </div>
-      </div>
-
-      <div class="nodes-header-row">
-        <div class="nodes-section-title">MOUNTED STORAGE NODES (CLICK CARD TO FILTER OBJECTS)</div>
-        <button id="reset-node-filter-btn" class="nodes-filter-reset hidden">Clear node filter</button>
-      </div>
-
-      <div id="accounts-list" class="accounts-list">
-        <div class="skeleton-card"></div>
-        <div class="skeleton-card"></div>
-        <div class="skeleton-card"></div>
-      </div>
-    </section>
-
-    <!-- Lake Objects Panel -->
-    <section class="panel">
-      <div class="panel-header">
-        <div class="panel-header-left">
-          <div class="panel-category">DATA LAKE OBJECTS</div>
-          <h2>Ingested File Repository</h2>
-        </div>
-        
-        <div class="panel-header-actions">
-          <!-- Feature 8: Export Lake Manifest -->
-          <button id="export-manifest-json" class="secondary icon-btn" title="Export Manifest as JSON">
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 13h10M8 2v8M5 7l3 3 3-3" stroke="currentColor" stroke-width="1.4"/></svg>
-            <span>Export Manifest</span>
-          </button>
-
-          <!-- Feature 4: View Mode Switcher -->
-          <div class="view-toggle-wrap">
-            <button id="view-table-btn" class="view-toggle-btn active" title="Table View [V]">
-              <svg viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="10" stroke="currentColor" stroke-width="1.4"/><path d="M2 7h12M6 7v6" stroke="currentColor" stroke-width="1.2"/></svg>
-            </button>
-            <button id="view-grid-btn" class="view-toggle-btn" title="Grid View [V]">
-              <svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" stroke="currentColor" stroke-width="1.4"/><rect x="9" y="2" width="5" height="5" stroke="currentColor" stroke-width="1.4"/><rect x="2" y="9" width="5" height="5" stroke="currentColor" stroke-width="1.4"/><rect x="9" y="9" width="5" height="5" stroke="currentColor" stroke-width="1.4"/></svg>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Feature 1 & 2: Toolbar with Live Search, Filter Pills & Sorting -->
-      <div class="objects-toolbar">
-        <div class="toolbar-primary-row">
-          <div class="search-input-wrap">
-            <svg class="search-icon" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.4"/><path d="M10.5 10.5l3 3" stroke="currentColor" stroke-width="1.4"/></svg>
-            <input id="object-search-input" class="search-input" type="text" placeholder="Search objects by name, extension, or shard label…" />
-            <span class="search-shortcut-hint">/</span>
-          </div>
-
-          <!-- Feature 3: Sort Selector -->
-          <div class="toolbar-controls">
-            <label for="sort-select" class="muted" style="font-size: 11.5px; font-weight: 600;">Sort:</label>
-            <select id="sort-select" class="sort-select">
-              <option value="date-desc">Newest First</option>
-              <option value="date-asc">Oldest First</option>
-              <option value="size-desc">Size: Largest</option>
-              <option value="size-asc">Size: Smallest</option>
-              <option value="name-asc">Name: A to Z</option>
-              <option value="name-desc">Name: Z to A</option>
-              <option value="shards-desc">Most Shards</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- Feature 2: Category Filter Pills -->
-        <div class="filter-pills-row">
-          <button class="filter-pill active" data-filter="all">All Objects (<span id="count-all">0</span>)</button>
-          <button class="filter-pill" data-filter="dataset">Datasets (<span id="count-dataset">0</span>)</button>
-          <button class="filter-pill" data-filter="document">Documents (<span id="count-document">0</span>)</button>
-          <button class="filter-pill" data-filter="archive">Archives &amp; Binaries (<span id="count-archive">0</span>)</button>
-          <button class="filter-pill" data-filter="media">Media (<span id="count-media">0</span>)</button>
-          <button class="filter-pill" data-filter="code">Code &amp; Text (<span id="count-code">0</span>)</button>
-        </div>
-
-        <!-- Feature 10: Active Node Filter Indicator Banner -->
-        <div id="active-node-banner" class="active-node-banner hidden">
-          <span>Filtering objects isolated to node: <strong id="active-node-label-text"></strong></span>
-          <button id="clear-node-filter" class="nodes-filter-reset">Show all objects</button>
-        </div>
-      </div>
-
-      <!-- Ingestion Dropzone -->
-      <div id="dropzone" class="dropzone">
-        <div class="dropzone-icon-wrap">
-          <svg class="dropzone-icon" viewBox="0 0 40 40" fill="none">
-            <path d="M20 25V9M20 9l-6 6M20 9l6 6" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter"/>
-            <path d="M8 27v5h24v-5" stroke="currentColor" stroke-width="2" stroke-linecap="square"/>
-          </svg>
-        </div>
-        <div class="dropzone-title">Drop files here for distributed lake ingestion</div>
-        <p class="dropzone-sub">Supports single or batch file uploads with automatic multi-node chunk sharding</p>
-        <label class="primary-btn file-input-label">
-          <span>Choose Local Files [U]</span>
-          <input id="file-input" type="file" multiple hidden />
-        </label>
-        <div id="upload-progress-wrap" class="upload-progress-wrap hidden">
-          <div class="upload-progress-bar"><div id="upload-progress-fill"></div></div>
-          <span id="upload-progress-text" class="upload-status-text"></span>
-        </div>
-      </div>
-
-      <!-- Files Table View -->
-      <div id="files-table-wrap" class="files-table-wrap">
-        <table class="files-table">
-          <thead>
-            <tr>
-              <th data-sort-key="name">Object Name</th>
-              <th data-sort-key="size">Size</th>
-              <th data-sort-key="shards">Shard Distribution</th>
-              <th data-sort-key="date">Ingested Date</th>
-              <th class="text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody id="files-tbody">
-            <tr class="skeleton-row"><td colspan="5"><div class="skeleton-line"></div></td></tr>
-            <tr class="skeleton-row"><td colspan="5"><div class="skeleton-line"></div></td></tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Feature 4: Files Grid View -->
-      <div id="files-grid-wrap" class="files-grid-wrap hidden"></div>
-
-      <!-- Empty State -->
-      <div id="no-files-msg" class="files-empty hidden">
-        <div class="empty-icon-wrap">
-          <svg viewBox="0 0 40 40" fill="none"><rect x="8" y="8" width="24" height="24" stroke="currentColor" stroke-width="1.8" stroke-dasharray="4 4"/><path d="M15 20h10M20 15v10" stroke="currentColor" stroke-width="1.6" stroke-linecap="square"/></svg>
-        </div>
-        <p class="empty-title">No Objects Match Filter</p>
-        <p class="empty-desc">Ingest datasets or files using the upload zone above or clear current filters.</p>
-      </div>
-    </section>
-
-    <!-- Feature 9: Activity Audit Log Panel -->
-    <section class="panel audit-log-panel">
-      <div class="panel-header">
-        <div>
-          <div class="panel-category">AUDIT &amp; TELEMETRY</div>
-          <h2>Recent Lake Ingestion Activity</h2>
-        </div>
-        <button id="clear-activity-btn" class="ghost" style="font-size: 11px; padding: 4px 8px;">Clear Audit Log</button>
-      </div>
-      <div id="activity-timeline" class="activity-timeline">
-        <div class="timeline-item">
-          <div class="timeline-item-left">
-            <span class="timeline-type-tag">CLUSTER</span>
-            <span>Cluster telemetry initialized. Storage pool operational.</span>
-          </div>
-          <span class="timeline-time">Just now</span>
-        </div>
-      </div>
-    </section>
-  </main>
+      </section>
+    </main>
+  </div>
 </div>
 
 <!-- Toast Container -->
@@ -769,9 +752,46 @@
       <select id="allocate-user-select"></select>
     </div>
 
+<!-- Generate API Key Input Modal -->
+<div id="api-key-prompt-modal" class="modal hidden">
+  <form id="api-key-prompt-form" class="modal-card">
+    <div class="modal-badge">PROGRAMMATIC SCRAPER KEY</div>
+    <h2>Generate API Key</h2>
+    <p class="muted">Create an API key to query metadata and stream files via python/curl scripts without a browser session.</p>
+
+    <div class="form-group">
+      <label class="form-label" for="api-key-name-input">Key Label / Description</label>
+      <input id="api-key-name-input" placeholder="e.g. Scraper Bot, Pipeline ETL, Backup Agent" required />
+    </div>
+
     <div class="modal-actions">
-      <button type="button" id="cancel-allocate" class="ghost">Cancel</button>
-      <button type="button" id="confirm-allocate-btn" class="primary-btn">Grant Allocation</button>
+      <button type="button" id="cancel-api-key-prompt" class="ghost">Cancel</button>
+      <button type="submit" class="primary-btn">Generate Key</button>
+    </div>
+  </form>
+</div>
+
+<!-- API Key Created Success Modal -->
+<div id="api-key-created-modal" class="modal hidden">
+  <div class="modal-card">
+    <div class="modal-badge" style="color: var(--accent-bronze);">KEY GENERATED SUCCESSFULLY</div>
+    <h2>Copy Your Secret API Key</h2>
+    <p class="muted">
+      Copy this key immediately. For security reasons, it will <strong>never be shown again</strong>.
+    </p>
+
+    <div class="share-link-row" style="margin: 12px 0;">
+      <input id="generated-key-output" type="text" readonly style="font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600;" />
+      <button type="button" id="copy-generated-key-btn" class="primary-btn">Copy</button>
+    </div>
+
+    <div class="scorecard-item" style="padding: 10px; font-size: 11.5px; background: var(--bg-2);">
+      <div style="font-weight: 700; color: var(--accent-bronze); margin-bottom: 4px;">Scraper &amp; Script Usage Example:</div>
+      <code style="display: block; background: var(--bg-1); border: 1px solid var(--edge); padding: 8px; font-family: 'JetBrains Mono'; font-size: 10.5px; white-space: pre-wrap; word-break: break-all;">curl -H "X-API-Key: <span id="curl-key-placeholder">sot_live_...</span>" https://YOUR_DOMAIN/api/files</code>
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" id="close-api-key-modal" class="primary-btn">Done</button>
     </div>
   </div>
 </div>

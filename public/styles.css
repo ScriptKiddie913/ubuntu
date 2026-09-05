@@ -1746,3 +1746,324 @@ main {
 }
 .alloc-revoke-btn:hover { color: var(--text); }
 
+/* ==========================================================================
+   High-Density Layout & Collapsible Sidebar Architecture
+   ========================================================================== */
+
+.app-layout {
+  display: flex;
+  min-height: calc(100vh - 54px);
+  width: 100%;
+  position: relative;
+  background: var(--bg-0);
+}
+
+/* Left Collapsible Sidebar */
+.app-sidebar {
+  width: 320px;
+  min-width: 320px;
+  background: var(--bg-1);
+  border-right: 1px solid var(--edge);
+  display: flex;
+  flex-direction: column;
+  transition: width 0.22s cubic-bezier(0.16, 1, 0.3, 1), min-width 0.22s ease, margin-left 0.22s ease;
+  overflow: hidden;
+  z-index: 20;
+}
+
+.app-sidebar.collapsed {
+  width: 0px !important;
+  min-width: 0px !important;
+  margin-left: -1px;
+  border-right: none;
+  visibility: hidden;
+}
+
+.sidebar-content {
+  width: 320px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  max-height: calc(100vh - 54px);
+}
+
+.sidebar-box {
+  background: var(--bg-0);
+  border: 1px solid var(--edge);
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sidebar-box-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sidebar-title {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--muted-strong);
+  text-transform: uppercase;
+}
+
+/* Mini Telemetry Matrix (2x2) */
+.matrix-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+
+.matrix-tile {
+  background: var(--bg-1);
+  border: 1px solid var(--edge);
+  padding: 5px 7px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.matrix-label {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+
+.matrix-val {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.matrix-sub {
+  font-size: 9px;
+  color: var(--muted-strong);
+}
+
+.sidebar-bar-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 2px;
+}
+
+.sidebar-bar-text {
+  font-size: 10px;
+  color: var(--muted-strong);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.sidebar-advisor-pill {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg-2);
+  border: 1px solid var(--edge);
+  padding: 4px 6px;
+  font-size: 10px;
+}
+
+.advisor-tag {
+  font-weight: 800;
+  font-size: 9px;
+  color: var(--accent-bronze);
+  flex-shrink: 0;
+}
+
+.advisor-text {
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Sidebar Storage Nodes List */
+.sidebar-accounts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.sidebar-accounts-list .account-card {
+  padding: 8px 10px;
+  gap: 4px;
+}
+
+.sidebar-accounts-list .acc-label {
+  font-size: 11.5px;
+}
+
+.sidebar-accounts-list .mini-bar {
+  height: 3px;
+}
+
+.sidebar-accounts-list .node-card-footer {
+  font-size: 10px;
+}
+
+/* Programmatic API Keys */
+.sidebar-api-keys-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.api-key-row {
+  background: var(--bg-1);
+  border: 1px solid var(--edge);
+  padding: 5px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.api-key-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  overflow: hidden;
+}
+
+.api-key-name {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.api-key-prefix {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  color: var(--accent-bronze);
+}
+
+.api-key-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-xs {
+  font-size: 10px !important;
+  padding: 2px 6px !important;
+  height: 22px !important;
+}
+
+.btn-sm {
+  font-size: 11.5px !important;
+  padding: 4px 10px !important;
+  height: 28px !important;
+}
+
+/* Sidebar Activity Timeline */
+.sidebar-timeline {
+  max-height: 120px;
+  overflow-y: auto;
+  gap: 3px;
+}
+
+.sidebar-timeline .timeline-item {
+  padding: 3px 5px;
+  font-size: 10px;
+}
+
+/* Main Workspace Area */
+.app-main {
+  flex: 1;
+  min-width: 0;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  max-height: calc(100vh - 54px);
+}
+
+/* Compact Ingestion Dropstrip */
+.compact-dropzone {
+  border: 1px dashed var(--edge-strong);
+  background: var(--bg-1);
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 0px;
+}
+
+.dropzone-compact-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.dropzone-icon-box {
+  color: var(--accent-bronze);
+  display: flex;
+  align-items: center;
+}
+
+.dropzone-compact-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.dropzone-main-text {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.dropzone-sub-text {
+  font-size: 10.5px;
+  color: var(--muted);
+}
+
+/* Compact Toolbar */
+.compact-toolbar {
+  margin-bottom: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.compact-toolbar .search-input {
+  height: 30px;
+  font-size: 11.5px;
+}
+
+.compact-toolbar .sort-select {
+  height: 28px;
+  font-size: 11px;
+  padding: 2px 20px 2px 6px;
+}
+
+.compact-toolbar .filter-pill {
+  font-size: 10px;
+  padding: 2px 8px;
+  height: 24px;
+}
+
+.compact-files-panel {
+  padding: 10px 12px;
+  background: var(--bg-1);
+  border: 1px solid var(--edge);
+}
+
+.compact-admin-panel {
+  padding: 12px 14px;
+}
+
+

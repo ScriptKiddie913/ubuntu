@@ -1,15 +1,64 @@
+const crypto = require('crypto');
 const { supabaseAdmin } = require('../supabaseClient');
 
-// Every protected route sends `Authorization: Bearer <supabase access token>`,
-// obtained client-side from supabase-js after sign-in. We verify it against
-// Supabase Auth on every request (no server-side session state to manage) and
-// attach the caller's user id, which every downstream query then filters by.
+// Protected route middleware: supports both Supabase client JWTs and
+// programmatic API keys (X-API-Key or Authorization: Bearer sot_live_...).
+// External scrapers and automated pipelines can query and stream files without a browser.
 module.exports = async function requireAuth(req, res, next) {
-  const header = req.headers.authorization || '';
-  const token = header.startsWith('Bearer ') ? header.slice(7).trim() : null;
-  if (!token) return res.status(401).json({ error: 'Not signed in.' });
+  const apiKeyHeader = req.headers['x-api-key'];
+  const authHeader = req.headers.authorization || '';
+  const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : null;
 
-  const { data, error } = await supabaseAdmin.auth.getUser(token);
+  // 1. Programmatic API Key Authentication
+  let candidateApiKey = null;
+  if (apiKeyHeader && typeof apiKeyHeader === 'string') {
+    candidateApiKey = apiKeyHeader.trim();
+  } else if (bearerToken && bearerToken.startsWith('sot_')) {
+    candidateApiKey = bearerToken;
+  }
+
+  if (candidateApiKey) {
+    const keyHash = crypto.createHash('sha256').update(candidateApiKey).digest('hex');
+
+    const { data: keyRecord, error: keyErr } = await supabaseAdmin
+      .from('api_keys')
+      .select('id, user_id, name')
+      .eq('key_hash', keyHash)
+      .maybeSingle();
+
+    if (keyErr || !keyRecord) {
+      return res.status(401).json({ error: 'Invalid, expired, or revoked API key.' });
+    }
+
+    // Touch last_used_at asynchronously
+    supabaseAdmin
+      .from('api_keys')
+      .update({ last_used_at: new Date().toISOString() })
+      .eq('id', keyRecord.id)
+      .then(() => {})
+      .catch(() => {});
+
+    // Lookup user in auth to fetch confirmed email
+    const { data: userData, error: userErr } = await supabaseAdmin.auth.admin.getUserById(keyRecord.user_id);
+    if (userErr || !userData || !userData.user) {
+      return res.status(401).json({ error: 'Tenant associated with API key not found.' });
+    }
+
+    req.userId = userData.user.id;
+    req.userEmail = userData.user.email;
+    req.userConfirmedAt = userData.user.email_confirmed_at;
+    req.user = userData.user;
+    req.isApiKey = true;
+    req.apiKeyName = keyRecord.name;
+    return next();
+  }
+
+  // 2. Standard Supabase JWT Bearer Authentication
+  if (!bearerToken) {
+    return res.status(401).json({ error: 'Authentication required. Provide an Authorization Bearer token or X-API-Key header.' });
+  }
+
+  const { data, error } = await supabaseAdmin.auth.getUser(bearerToken);
   if (error || !data || !data.user) {
     return res.status(401).json({ error: 'Session expired or invalid — please sign in again.' });
   }
@@ -22,5 +71,7 @@ module.exports = async function requireAuth(req, res, next) {
 
   req.userId = data.user.id;
   req.userEmail = data.user.email;
+  req.userConfirmedAt = data.user.email_confirmed_at;
+  req.user = data.user;
   next();
 };

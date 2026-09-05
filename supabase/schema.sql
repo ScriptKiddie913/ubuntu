@@ -160,6 +160,43 @@ create policy "public_node_allocations_select_own"
   using (auth.uid() = user_id);
 
 -- ============================================================================
+-- Table: api_keys
+-- Programmatic API keys for external scraping, automated fetching, and scripts.
+-- Allows scripts and tools to query /api/files, inspect metadata, and download
+-- shards directly using an HTTP header (X-API-Key: sot_live_...).
+-- ============================================================================
+create table if not exists public.api_keys (
+  id           uuid primary key default gen_random_uuid(),
+  user_id      uuid not null references auth.users (id) on delete cascade,
+  name         text not null default 'Default API Key',
+  key_prefix   text not null, -- e.g. sot_live_a1b2...
+  key_hash     text not null unique, -- sha256 hex digest
+  created_at   timestamptz not null default now(),
+  last_used_at timestamptz
+);
+
+create index if not exists api_keys_user_id_idx on public.api_keys (user_id);
+create index if not exists api_keys_key_hash_idx on public.api_keys (key_hash);
+
+alter table public.api_keys enable row level security;
+alter table public.api_keys force row level security;
+
+-- Users can view their own API keys (prefix, name, created_at, last_used_at)
+drop policy if exists "api_keys_select_own" on public.api_keys;
+create policy "api_keys_select_own"
+  on public.api_keys for select
+  using (auth.uid() = user_id);
+
+-- Users can delete/revoke their own API keys
+drop policy if exists "api_keys_delete_own" on public.api_keys;
+create policy "api_keys_delete_own"
+  on public.api_keys for delete
+  using (auth.uid() = user_id);
+
+-- Deliberately no INSERT/UPDATE policy for client roles:
+-- Only backend service-role creates keys and updates last_used_at.
+
+-- ============================================================================
 -- Required manual step (not SQL): enable email confirmations
 -- ============================================================================
 -- In the Supabase dashboard: Authentication → Providers → Email →
@@ -167,4 +204,5 @@ create policy "public_node_allocations_select_own"
 -- verification email before they can sign in; it's a project setting, not
 -- something a SQL script can toggle.
 -- ============================================================================
+
 

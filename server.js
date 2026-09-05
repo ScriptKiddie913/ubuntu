@@ -10,6 +10,7 @@ const fileRoutes = require('./src/routes/files');
 const publicShareRoutes = require('./src/routes/publicShare');
 const dbRoutes = require('./src/routes/db');
 const adminRoutes = require('./src/routes/admin');
+const apiKeyRoutes = require('./src/routes/apiKeys');
 const { startKeepAlive } = require('./src/keepAlive');
 const { startCloudHeartbeat } = require('./src/cloudHeartbeat');
 
@@ -22,8 +23,18 @@ for (const name of ['SUPABASE_URL', 'SUPABASE_ANON_KEY', 'SUPABASE_SERVICE_ROLE_
 
 const app = express();
 app.set('trust proxy', 1); // needed for correct protocol/host behind Render's proxy
+app.disable('x-powered-by');
 
-app.use(express.json());
+// Enterprise Security Headers
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  next();
+});
+
+app.use(express.json({ limit: '10mb' }));
 
 // Cheap, unauthenticated, no external calls (Supabase/storage nodes) — this is what both
 // the self-ping keep-alive (src/keepAlive.js) and any external uptime monitor
@@ -41,6 +52,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/accounts', requireAuth, accountRoutes);
 app.use('/api/files', requireAuth, fileRoutes);
 app.use('/api/db', requireAuth, dbRoutes);
+app.use('/api/keys', requireAuth, apiKeyRoutes);
 app.use('/api/admin', requireAuth, requireAdmin, adminRoutes);
 app.use('/share', publicShareRoutes); // intentionally NOT behind requireAuth — this is the public link surface
 
