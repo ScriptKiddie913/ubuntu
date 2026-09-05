@@ -1,18 +1,14 @@
 const { supabaseAdmin } = require('./supabaseClient');
 
-// This module is the only place that talks to Postgres directly. Every function
-// takes the caller's userId (taken from their verified JWT in requireAuth) and
-// filters by it explicitly — the service-role connection bypasses RLS, so this
-// hand-scoping is what actually keeps one user's accounts/files invisible to
-// another, on top of the database-level RLS policies in supabase/schema.sql.
-
 function normalizeAccount(row) {
   if (!row) return null;
   return {
+    id: row.id,
     label: row.label,
     email: row.email,
     passwordEncrypted: row.password_encrypted,
     addedAt: row.added_at,
+    isPublic: !!row.is_public,
   };
 }
 
@@ -31,7 +27,7 @@ function normalizeFile(row) {
   };
 }
 
-// ---------------- MEGA accounts ----------------
+// ---------------- Personal Storage Accounts ----------------
 
 async function listAccounts(userId) {
   const { data, error } = await supabaseAdmin
@@ -61,10 +57,133 @@ async function insertAccount(userId, { label, email, passwordEncrypted }) {
     .select()
     .single();
   if (error) {
-    if (error.code === '23505') throw new Error(`An account labeled "${label}" already exists.`);
+    if (error.code === '23505') throw new Error(`A node labeled "${label}" already exists in your pool.`);
     throw new Error(`Failed to save account: ${error.message}`);
   }
   return normalizeAccount(data);
+}
+
+// ---------------- Public Storage Nodes (Admin Managed) ----------------
+
+async function listPublicNodes() {
+  const { data, error } = await supabaseAdmin
+    .from('public_storage_nodes')
+    .select('*')
+    .order('added_at', { ascending: true });
+  if (error) {
+    if (error.code === '42P01') return []; // table not yet migrated
+    throw new Error(`Failed to load public storage nodes: ${error.message}`);
+  }
+
+  // Also fetch allocations for each node
+  const { data: allocations } = await supabaseAdmin
+    .from('public_node_allocations')
+    .select('*');
+
+  return (data || []).map((node) => {
+    const allocatedUsers = (allocations || [])
+      .filter((a) => a.node_id === node.id)
+      .map((a) => a.user_id);
+    return {
+      id: node.id,
+      label: node.label,
+      email: node.email,
+      passwordEncrypted: node.password_encrypted,
+      notes: node.notes || '',
+      addedAt: node.added_at,
+      allocatedUserIds: allocatedUsers,
+      isPublic: true,
+    };
+  });
+}
+
+async function findPublicNodeByLabel(label) {
+  const { data, error } = await supabaseAdmin
+    .from('public_storage_nodes')
+    .select('*')
+    .eq('label', label)
+    .maybeSingle();
+  if (error || !data) return null;
+  return {
+    id: data.id,
+    label: data.label,
+    email: data.email,
+    passwordEncrypted: data.password_encrypted,
+    isPublic: true,
+  };
+}
+
+async function insertPublicNode({ label, email, passwordEncrypted, notes }) {
+  const { data, error } = await supabaseAdmin
+    .from('public_storage_nodes')
+    .insert({
+      label,
+      email,
+      password_encrypted: passwordEncrypted,
+      notes: notes || '',
+    })
+    .select()
+    .single();
+  if (error) {
+    if (error.code === '23505') throw new Error(`A public node labeled "${label}" already exists.`);
+    throw new Error(`Failed to create public node: ${error.message}`);
+  }
+  return data;
+}
+
+async function deletePublicNode(nodeId) {
+  const { error } = await supabaseAdmin
+    .from('public_storage_nodes')
+    .delete()
+    .eq('id', nodeId);
+  if (error) throw new Error(`Failed to delete public node: ${error.message}`);
+}
+
+async function allocatePublicNode(nodeId, userId) {
+  const { data, error } = await supabaseAdmin
+    .from('public_node_allocations')
+    .insert({ node_id: nodeId, user_id: userId })
+    .select()
+    .single();
+  if (error) {
+    if (error.code === '23505') throw new Error('User already has this public storage node allocated.');
+    throw new Error(`Failed to allocate node: ${error.message}`);
+  }
+  return data;
+}
+
+async function revokePublicNodeAllocation(nodeId, userId) {
+  const { error } = await supabaseAdmin
+    .from('public_node_allocations')
+    .delete()
+    .eq('node_id', nodeId)
+    .eq('user_id', userId);
+  if (error) throw new Error(`Failed to revoke allocation: ${error.message}`);
+}
+
+async function getUserAllocatedPublicNodes(userId) {
+  const { data: allocs, error: aErr } = await supabaseAdmin
+    .from('public_node_allocations')
+    .select('node_id')
+    .eq('user_id', userId);
+  
+  if (aErr || !allocs || allocs.length === 0) return [];
+  const nodeIds = allocs.map((a) => a.node_id);
+
+  const { data: nodes, error: nErr } = await supabaseAdmin
+    .from('public_storage_nodes')
+    .select('*')
+    .in('id', nodeIds);
+  
+  if (nErr || !nodes) return [];
+  return nodes.map((node) => ({
+    id: node.id,
+    label: node.label,
+    email: node.email,
+    passwordEncrypted: node.password_encrypted,
+    addedAt: node.added_at,
+    isPublic: true,
+  }));
 }
 
 // ---------------- Files ----------------
@@ -128,11 +247,6 @@ async function setFileShare(userId, id, share) {
   return normalizeFile(data);
 }
 
-// Not user-scoped by design — a share link is meant to be found by its token
-// alone, by an anonymous visitor. This is only ever called from the public
-// /share/:token route via the service-role connection; it never touches the
-// anon key, so it does not need (and deliberately has no) RLS policy backing
-// anonymous access.
 async function findFileByShareToken(token) {
   const { data, error } = await supabaseAdmin
     .from('pool_files')
@@ -143,14 +257,58 @@ async function findFileByShareToken(token) {
   return normalizeFile(data);
 }
 
+// ---------------- Super-Admin Functions ----------------
+
+async function adminListUsers() {
+  const { data, error } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
+  if (error) throw new Error(`Failed to list users from auth: ${error.message}`);
+
+  const users = data.users || [];
+
+  // Get file counts & node counts
+  const { data: fileCounts } = await supabaseAdmin.from('pool_files').select('user_id, size');
+  const { data: nodeCounts } = await supabaseAdmin.from('mega_accounts').select('user_id');
+  const { data: allocations } = await supabaseAdmin
+    .from('public_node_allocations')
+    .select('user_id, public_storage_nodes(label)');
+
+  return users.map((u) => {
+    const userFiles = (fileCounts || []).filter((f) => f.user_id === u.id);
+    const totalBytes = userFiles.reduce((sum, f) => sum + Number(f.size || 0), 0);
+    const personalNodes = (nodeCounts || []).filter((n) => n.user_id === u.id).length;
+    const userAllocs = (allocations || [])
+      .filter((a) => a.user_id === u.id)
+      .map((a) => (a.public_storage_nodes ? a.public_storage_nodes.label : ''));
+
+    return {
+      id: u.id,
+      email: u.email,
+      emailConfirmed: !!u.email_confirmed_at,
+      createdAt: u.created_at,
+      fileCount: userFiles.length,
+      totalBytes,
+      personalNodes,
+      allocatedPublicNodes: userAllocs,
+    };
+  });
+}
+
 module.exports = {
   listAccounts,
   findAccount,
   insertAccount,
+  listPublicNodes,
+  findPublicNodeByLabel,
+  insertPublicNode,
+  deletePublicNode,
+  allocatePublicNode,
+  revokePublicNodeAllocation,
+  getUserAllocatedPublicNodes,
   listFiles,
   findFile,
   insertFile,
   deleteFile,
   setFileShare,
   findFileByShareToken,
+  adminListUsers,
 };

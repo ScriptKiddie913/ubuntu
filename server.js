@@ -3,12 +3,15 @@ const express = require('express');
 const path = require('path');
 
 const requireAuth = require('./src/middleware/requireAuth');
+const requireAdmin = require('./src/middleware/requireAdmin');
 const authRoutes = require('./src/routes/auth');
 const accountRoutes = require('./src/routes/accounts');
 const fileRoutes = require('./src/routes/files');
 const publicShareRoutes = require('./src/routes/publicShare');
 const dbRoutes = require('./src/routes/db');
+const adminRoutes = require('./src/routes/admin');
 const { startKeepAlive } = require('./src/keepAlive');
+const { startCloudHeartbeat } = require('./src/cloudHeartbeat');
 
 for (const name of ['SUPABASE_URL', 'SUPABASE_ANON_KEY', 'SUPABASE_SERVICE_ROLE_KEY', 'MASTER_KEY']) {
   if (!process.env[name]) {
@@ -38,6 +41,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/accounts', requireAuth, accountRoutes);
 app.use('/api/files', requireAuth, fileRoutes);
 app.use('/api/db', requireAuth, dbRoutes);
+app.use('/api/admin', requireAuth, requireAdmin, adminRoutes);
 app.use('/share', publicShareRoutes); // intentionally NOT behind requireAuth — this is the public link surface
 
 app.use(express.static(path.join(__dirname, 'public')));
@@ -70,6 +74,7 @@ server.timeout = 0; // disable the separate idle-socket timeout for this flow
 server.keepAliveTimeout = 65 * 1000; // keep the usual keep-alive behavior for normal requests
 
 startKeepAlive();
+startCloudHeartbeat();
 
 // Note: if this is deployed behind another proxy/CDN in front of Node (Render's
 // own edge, Cloudflare, nginx, etc.), that layer may have its own independent

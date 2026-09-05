@@ -2,9 +2,6 @@ const { Storage } = require('megajs');
 const { encrypt, decrypt } = require('./crypto');
 const db = require('./db');
 
-// Live MEGA sessions are cached in memory, keyed by `${userId}:${label}` so two
-// different users can each use the same label (e.g. both calling an account
-// "personal") without colliding.
 const sessions = new Map();
 const QUOTA_TTL_MS = 30 * 1000;
 
@@ -16,7 +13,7 @@ async function login(email, password, secondFactorCode) {
   const options = {
     email,
     password,
-    userAgent: 'SoTaNik_AI-DataLake/1.0',
+    userAgent: 'SoTaNik_AI-DataLake/2.0',
   };
   if (secondFactorCode) options.secondFactorCode = secondFactorCode;
   const storage = await new Storage(options).ready;
@@ -25,36 +22,36 @@ async function login(email, password, secondFactorCode) {
 
 async function addAccount(userId, { label, email, password, secondFactorCode }) {
   if (!label || !email || !password) {
-    throw new Error('label, email and password are all required.');
+    throw new Error('Label, email and password are all required.');
   }
 
-  const storage = await login(email, password, secondFactorCode); // throws on bad credentials/2FA
+  const storage = await login(email, password, secondFactorCode);
   sessions.set(sessionKey(userId, label), { storage, quota: null, quotaAt: 0 });
 
   await db.insertAccount(userId, { label, email, passwordEncrypted: encrypt(password) });
-
   return { label, email };
 }
-
-// Note: there is deliberately no removeAccount function. Once an account joins a
-// user's pool it stays part of it permanently — see the comment in
-// src/routes/accounts.js for why. RLS backs this up (no UPDATE/DELETE policy on
-// mega_accounts) as a second layer.
 
 async function getSession(userId, label) {
   const key = sessionKey(userId, label);
   const cached = sessions.get(key);
   if (cached) return cached.storage;
 
-  const account = await db.findAccount(userId, label);
-  if (!account) throw new Error(`Unknown storage account label "${label}".`);
+  // Check personal accounts first
+  let account = await db.findAccount(userId, label);
+
+  // If not found, check if it's an allocated public node
+  if (!account) {
+    account = await db.findPublicNodeByLabel(label);
+  }
+
+  if (!account) throw new Error(`Unknown storage node identifier "${label}".`);
 
   const storage = await login(account.email, decrypt(account.passwordEncrypted));
   sessions.set(key, { storage, quota: null, quotaAt: 0 });
   return storage;
 }
 
-// Re-logs in a single account (used after auth/session errors) and returns the fresh storage.
 async function reloginAccount(userId, label) {
   sessions.delete(sessionKey(userId, label));
   return getSession(userId, label);
@@ -73,21 +70,29 @@ async function getQuota(userId, label) {
   try {
     info = await storage.getAccountInfo();
   } catch (err) {
-    // Session may have gone stale — try exactly once more after a fresh login.
     const fresh = await reloginAccount(userId, label);
     info = await fresh.getAccountInfo();
   }
   const quota = { spaceUsed: info.spaceUsed, spaceTotal: info.spaceTotal };
   const entry = sessions.get(key);
-  entry.quota = quota;
-  entry.quotaAt = now;
+  if (entry) {
+    entry.quota = quota;
+    entry.quotaAt = now;
+  }
   return quota;
 }
 
 async function listAccountsWithUsage(userId) {
-  const accounts = await db.listAccounts(userId);
+  const personalAccounts = await db.listAccounts(userId);
+  const allocatedPublic = await db.getUserAllocatedPublicNodes(userId);
+
+  const combined = [
+    ...personalAccounts.map((a) => ({ ...a, isPublic: false })),
+    ...allocatedPublic.map((a) => ({ ...a, isPublic: true })),
+  ];
+
   const results = [];
-  for (const acc of accounts) {
+  for (const acc of combined) {
     try {
       const quota = await getQuota(userId, acc.label);
       results.push({
@@ -97,6 +102,7 @@ async function listAccountsWithUsage(userId) {
         spaceTotal: quota.spaceTotal,
         spaceFree: Math.max(0, quota.spaceTotal - quota.spaceUsed),
         status: 'ok',
+        isPublic: acc.isPublic,
       });
     } catch (err) {
       results.push({
@@ -107,6 +113,7 @@ async function listAccountsWithUsage(userId) {
         spaceFree: 0,
         status: 'error',
         error: err.message,
+        isPublic: acc.isPublic,
       });
     }
   }
@@ -131,6 +138,38 @@ async function getPoolSummary(userId) {
   };
 }
 
+// ---------------- Admin Full Cloud Deletion ----------------
+// Completely purges all physical chunks across personal and public cloud nodes
+// for a specified user, so no orphaned data pieces remain in the clouds.
+async function adminWipeUserCloudFiles(userId) {
+  const files = await db.listFiles(userId);
+  let deletedPieces = 0;
+
+  for (const file of files) {
+    for (const chunk of file.chunks || []) {
+      try {
+        const storage = await getSession(userId, chunk.label);
+        const nodeFile = storage.files ? storage.files[chunk.nodeId] : null;
+        if (nodeFile) {
+          await nodeFile.delete(true);
+          deletedPieces++;
+        }
+      } catch (err) {
+        console.warn(`[admin wipe] Failed to delete chunk ${chunk.nodeId} on node ${chunk.label}:`, err.message);
+      }
+    }
+  }
+
+  // Clear memory sessions for this user
+  for (const [key] of sessions.entries()) {
+    if (key.startsWith(`${userId}:`)) {
+      sessions.delete(key);
+    }
+  }
+
+  return { filesCount: files.length, piecesDeleted: deletedPieces };
+}
+
 module.exports = {
   addAccount,
   getSession,
@@ -138,4 +177,5 @@ module.exports = {
   getQuota,
   listAccountsWithUsage,
   getPoolSummary,
+  adminWipeUserCloudFiles,
 };

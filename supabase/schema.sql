@@ -114,6 +114,52 @@ create policy "pool_files_delete_own"
 -- deliberately no policy) allowing anon/public SELECT on pool_files here.
 
 -- ============================================================================
+-- Public Storage Nodes & Allocation System (Admin-Managed)
+-- ============================================================================
+-- Super-admin can connect cloud accounts as "Public Storage", which can be
+-- manually allocated to specific users as extra pooled capacity.
+-- ---------------------------------------------------------------------------
+
+create table if not exists public.public_storage_nodes (
+  id                 uuid primary key default gen_random_uuid(),
+  label              text not null unique,
+  email              text not null,
+  password_encrypted text not null,
+  notes              text,
+  added_at           timestamptz not null default now()
+);
+
+alter table public.public_storage_nodes enable row level security;
+alter table public.public_storage_nodes force row level security;
+
+-- Only service role talks to public_storage_nodes directly.
+-- No anon access by design to prevent credential exposure.
+
+-- ---------------------------------------------------------------------------
+-- Table: public_node_allocations
+-- Maps which users have been granted access to which public storage node.
+-- ---------------------------------------------------------------------------
+create table if not exists public.public_node_allocations (
+  id           uuid primary key default gen_random_uuid(),
+  node_id      uuid not null references public.public_storage_nodes (id) on delete cascade,
+  user_id      uuid not null references auth.users (id) on delete cascade,
+  allocated_at timestamptz not null default now(),
+  constraint public_node_allocations_node_user_unique unique (node_id, user_id)
+);
+
+create index if not exists public_node_allocations_user_idx on public.public_node_allocations (user_id);
+create index if not exists public_node_allocations_node_idx on public.public_node_allocations (node_id);
+
+alter table public.public_node_allocations enable row level security;
+alter table public.public_node_allocations force row level security;
+
+-- Users can select allocations granted to them
+drop policy if exists "public_node_allocations_select_own" on public.public_node_allocations;
+create policy "public_node_allocations_select_own"
+  on public.public_node_allocations for select
+  using (auth.uid() = user_id);
+
+-- ============================================================================
 -- Required manual step (not SQL): enable email confirmations
 -- ============================================================================
 -- In the Supabase dashboard: Authentication → Providers → Email →
@@ -121,3 +167,4 @@ create policy "pool_files_delete_own"
 -- verification email before they can sign in; it's a project setting, not
 -- something a SQL script can toggle.
 -- ============================================================================
+

@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<meta name="description" content="SoTaNik_AI Data Lake — Combine distributed storage accounts into one unified high-performance virtual storage lake." />
-<meta name="theme-color" content="#2563eb" />
-<title>SoTaNik_AI Data Lake — Unified Virtual Storage</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%232563eb'/%3E%3Crect x='8' y='8' width='16' height='16' fill='%23ffffff'/%3E%3Crect x='12' y='12' width='8' height='8' fill='%232563eb'/%3E%3C/svg%3E" />
+<meta name="description" content="SoTaNik_AI Data Lake — Unified distributed virtual storage combining multiple nodes into one high-performance virtual drive." />
+<meta name="theme-color" content="#f5f2eb" />
+<title>SoTaNik_AI Data Lake — Architectural Virtual Storage</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23292524'/%3E%3Crect x='8' y='8' width='16' height='16' fill='%23f5f2eb'/%3E%3Crect x='12' y='12' width='8' height='8' fill='%23292524'/%3E%3C/svg%3E" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -24,12 +24,12 @@
     <div class="boot-spinner">
       <span></span><span></span><span></span><span></span>
     </div>
-    <p id="boot-status" class="muted">Initializing SoTaNik_AI Data Lake…</p>
+    <p id="boot-status" class="muted">Initializing SoTaNik_AI Data Lake Console…</p>
   </div>
   <div id="boot-error" class="boot-error hidden">
     <div class="boot-error-card">
       <div class="error-badge">STARTUP ERROR</div>
-      <h2>Couldn't start SoTaNik_AI Data Lake</h2>
+      <h2>Couldn't connect to Data Lake</h2>
       <p id="boot-error-message" class="muted"></p>
       <button type="button" id="boot-retry-btn" class="primary-btn">Retry Connection</button>
     </div>
@@ -38,20 +38,12 @@
 
 <!-- Login / Sign-up Screen -->
 <div id="login-screen" class="screen hidden">
-  <div class="login-decor" aria-hidden="true">
-    <span class="decor-sq sq-1"></span>
-    <span class="decor-sq sq-2"></span>
-    <span class="decor-sq sq-3"></span>
-    <span class="decor-sq sq-4"></span>
-    <div class="decor-grid-pattern"></div>
-  </div>
-
   <div class="login-layout">
     <!-- Hero Column -->
     <div class="login-hero">
       <div class="hero-status-pill">
         <span class="status-dot"></span>
-        <span>AI DATA LAKE ARCHITECTURE &bull; ENTERPRISE V2.4</span>
+        <span>ARCHITECTURAL CLUSTER ACTIVE &bull; STABLE ENTERPRISE V2.4</span>
       </div>
       
       <div class="hero-brand-row">
@@ -62,7 +54,7 @@
       </div>
 
       <p class="hero-tagline">
-        Aggregate disparate storage accounts into a unified, high-throughput virtual data lake. Automated chunk sharding, AES-256 envelope security, and instant object retrieval.
+        Autonomous multi-node storage aggregation with zero vendor lock-in. Encrypted sharding, transparent distributed chunk allocation, and zero-compromise tenant privacy.
       </p>
 
       <div class="hero-metrics-grid">
@@ -72,7 +64,7 @@
         </div>
         <div class="hero-metric-card">
           <div class="metric-num">256-bit</div>
-          <div class="metric-label">Vault Encryption</div>
+          <div class="metric-label">Envelope Vault</div>
         </div>
         <div class="hero-metric-card">
           <div class="metric-num">100%</div>
@@ -86,8 +78,8 @@
             <svg viewBox="0 0 20 20" fill="none"><rect x="3" y="3" width="6" height="6" stroke="currentColor" stroke-width="1.5"/><rect x="11" y="3" width="6" height="6" stroke="currentColor" stroke-width="1.5"/><rect x="3" y="11" width="6" height="6" stroke="currentColor" stroke-width="1.5"/><rect x="11" y="11" width="6" height="6" stroke="currentColor" stroke-width="1.5"/></svg>
           </div>
           <div>
-            <strong>Virtual Lake Sharding</strong>
-            <span>Pool unlimited storage nodes into one unified, seamless virtual drive.</span>
+            <strong>Virtual Sharded Storage Pool</strong>
+            <span>Amalgamate disparate accounts into a unified virtual drive with zero manual placement.</span>
           </div>
         </li>
         <li>
@@ -95,8 +87,8 @@
             <svg viewBox="0 0 20 20" fill="none"><rect x="4" y="8" width="12" height="9" stroke="currentColor" stroke-width="1.5"/><path d="M6.5 8V6a3.5 3.5 0 017 0v2" stroke="currentColor" stroke-width="1.5"/></svg>
           </div>
           <div>
-            <strong>Zero-Knowledge Credentials</strong>
-            <span>Node keys are AES-256-GCM encrypted with a discrete master key.</span>
+            <strong>Zero-Knowledge Master Vault</strong>
+            <span>Node credentials encrypted with discrete AES-256-GCM keys at rest.</span>
           </div>
         </li>
         <li>
@@ -104,17 +96,8 @@
             <svg viewBox="0 0 20 20" fill="none"><circle cx="8.5" cy="8.5" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M15 15l-3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/></svg>
           </div>
           <div>
-            <strong>Fast Stream Ingestion</strong>
-            <span>Stream, chunk, and index massive binary or dataset files transparently.</span>
-          </div>
-        </li>
-        <li>
-          <div class="feature-icon">
-            <svg viewBox="0 0 20 20" fill="none"><circle cx="15" cy="5" r="2.2" stroke="currentColor" stroke-width="1.5"/><circle cx="5" cy="10" r="2.2" stroke="currentColor" stroke-width="1.5"/><circle cx="15" cy="15" r="2.2" stroke="currentColor" stroke-width="1.5"/><path d="M7 9.2l6-3.2M7 10.8l6 3.2" stroke="currentColor" stroke-width="1.4"/></svg>
-          </div>
-          <div>
-            <strong>Granular Access Sharing</strong>
-            <span>Publish secure, time-expiring direct access links with instant revocation.</span>
+            <strong>Stream Ingestion Pipeline</strong>
+            <span>Ingest and stream high-capacity objects seamlessly with automatic chunk reassembly.</span>
           </div>
         </li>
       </ul>
@@ -125,9 +108,9 @@
       <div class="login-card-topline"></div>
       
       <div class="login-card-header">
-        <div class="auth-brand-badge">PORTAL ACCESS</div>
+        <div class="auth-brand-badge">TENANT CONSOLE</div>
         <h2 class="login-card-title">Access Data Lake</h2>
-        <p class="auth-subtitle">Sign in or create your tenant credentials to manage your data lake cluster.</p>
+        <p class="auth-subtitle">Sign in or provision your tenant space on the cluster.</p>
       </div>
 
       <div class="auth-tabs">
@@ -140,14 +123,14 @@
       <form id="signin-form" class="auth-form">
         <div class="form-group">
           <label class="form-label" for="signin-email">Account Email</label>
-          <input id="signin-email" type="email" placeholder="name@company.com" autocomplete="email" required />
+          <input id="signin-email" type="email" placeholder="name@domain.com" autocomplete="email" required />
         </div>
         <div class="form-group">
           <label class="form-label" for="signin-password">Password</label>
-          <input id="signin-password" type="password" placeholder="Enter your password" autocomplete="current-password" required />
+          <input id="signin-password" type="password" placeholder="Enter password" autocomplete="current-password" required />
         </div>
         <button type="submit" class="primary-btn auth-submit-btn">
-          <span>Authenticate &amp; Enter</span>
+          <span>Authenticate &amp; Access</span>
           <svg viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="square"/></svg>
         </button>
         <div id="signin-error" class="error-banner hidden"></div>
@@ -156,8 +139,8 @@
       <!-- Sign Up Form -->
       <form id="signup-form" class="auth-form hidden">
         <div class="form-group">
-          <label class="form-label" for="signup-email">Business or Personal Email</label>
-          <input id="signup-email" type="email" placeholder="name@company.com" autocomplete="email" required />
+          <label class="form-label" for="signup-email">Account Email</label>
+          <input id="signup-email" type="email" placeholder="name@domain.com" autocomplete="email" required />
         </div>
         <div class="form-group">
           <label class="form-label" for="signup-password">Create Password</label>
@@ -165,10 +148,10 @@
         </div>
         <div class="form-group">
           <label class="form-label" for="signup-password-confirm">Confirm Password</label>
-          <input id="signup-password-confirm" type="password" placeholder="Re-type password" autocomplete="new-password" minlength="6" required />
+          <input id="signup-password-confirm" type="password" placeholder="Re-enter password" autocomplete="new-password" minlength="6" required />
         </div>
         <button type="submit" class="primary-btn auth-submit-btn">
-          <span>Create Tenant Account</span>
+          <span>Provision Tenant Space</span>
           <svg viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="square"/></svg>
         </button>
         <div id="signup-error" class="error-banner hidden"></div>
@@ -179,19 +162,19 @@
         <div class="verify-icon-box">
           <svg viewBox="0 0 32 32" fill="none" class="verify-icon"><rect x="5" y="9" width="22" height="16" stroke="currentColor" stroke-width="1.8"/><path d="M6 10l10 8 10-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/></svg>
         </div>
-        <h2>Verify Your Email</h2>
-        <p class="muted">A secure verification confirmation was dispatched to <strong id="verify-email-addr"></strong>. Confirm the link, then sign in to your data lake.</p>
+        <h2>Confirmation Link Dispatched</h2>
+        <p class="muted">Check your inbox at <strong id="verify-email-addr"></strong>. Verify the link, then return to sign in.</p>
         <button type="button" id="verify-back-btn" class="secondary">Return to Sign In</button>
       </div>
 
       <div class="login-badges">
         <div class="security-pill">
           <svg viewBox="0 0 16 16" fill="none"><path d="M8 2l5 2.5v4c0 3.5-2.5 6-5 7-2.5-1-5-3.5-5-7v-4L8 2z" stroke="currentColor" stroke-width="1.3"/></svg>
-          <span>End-to-End Encrypted</span>
+          <span>AES-256 Vaulted</span>
         </div>
         <div class="security-pill">
           <svg viewBox="0 0 16 16" fill="none"><path d="M2 13h12M4 10V6a4 4 0 018 0v4" stroke="currentColor" stroke-width="1.3"/></svg>
-          <span>Dedicated Tenant Vault</span>
+          <span>Dedicated Tenant Scoped</span>
         </div>
       </div>
     </div>
@@ -205,20 +188,41 @@
       <div class="topbar-symbol"></div>
       <div class="topbar-title-wrap">
         <span class="topbar-title">SoTaNik_AI</span>
-        <span class="topbar-badge">Data Lake</span>
+        <span class="topbar-badge">Data Lake Console</span>
       </div>
       <div class="lake-status-tag">
         <span class="pulse-indicator"></span>
-        <span>Lake Active</span>
+        <span>Operational</span>
       </div>
     </div>
 
     <div class="topbar-right">
+      <!-- Feature 20: Theme Mode Switcher -->
+      <button id="theme-toggle-btn" class="topbar-util-btn" title="Toggle Matte Theme (Warm Cream / Deep Obsidian) [M]">
+        <span id="theme-btn-label">Charcoal Mode</span>
+      </button>
+
+      <!-- Feature 19: Keyboard Shortcuts Trigger -->
+      <button id="shortcuts-modal-btn" class="topbar-util-btn" title="Keyboard Shortcuts [?]">
+        <span>Shortcuts [?]</span>
+      </button>
+
+      <!-- Super-Admin Console Toggle (Shown only for sagnik.saha.raptor@gmail.com) -->
+      <button id="admin-panel-toggle-btn" class="topbar-util-btn hidden" style="border-color: var(--accent-bronze); color: var(--accent-bronze); font-weight: 700;" title="Super-Admin Management Console">
+        <span>Admin Console</span>
+      </button>
+
+      <!-- Feature 16: Vault Security Trigger -->
+      <button id="vault-info-btn" class="topbar-util-btn" title="Inspect Security Vault">
+        <span>Vault Security</span>
+      </button>
+
       <div class="user-chip">
         <span class="user-chip-label">TENANT:</span>
         <span id="user-email-badge"></span>
       </div>
-      <button id="logout-btn" class="ghost icon-btn" title="Sign out of Data Lake">
+      
+      <button id="logout-btn" class="ghost icon-btn" title="Sign out">
         <svg viewBox="0 0 20 20" fill="none"><path d="M7 4H4v12h3M13 10H8m5 0l-2.5-2.5M13 10l-2.5 2.5M11 4h3v3M14 13v3h-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/></svg>
         <span>Sign out</span>
       </button>
@@ -226,34 +230,154 @@
   </header>
 
   <main>
-    <!-- Pool Overview Panel -->
-    <section class="panel">
+    <!-- Super-Admin Command Section (Visible exclusively to sagnik.saha.raptor@gmail.com) -->
+    <section id="admin-section" class="panel hidden" style="border-color: var(--accent-bronze); background: var(--bg-1);">
       <div class="panel-header">
         <div>
-          <div class="panel-category">INFRASTRUCTURE</div>
-          <h2>Distributed Storage Capacity</h2>
+          <div class="panel-category" style="color: var(--accent-bronze);">SUPER-ADMIN COMMAND CENTER</div>
+          <h2>Cluster Tenant &amp; Public Storage Control</h2>
         </div>
-        <button id="add-account-btn" class="primary-btn icon-btn">
-          <svg viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/></svg>
-          <span>Connect Storage Node</span>
-        </button>
+        <div class="panel-header-actions">
+          <button id="admin-run-heartbeat-btn" class="secondary icon-btn" title="Ping all cloud accounts immediately">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.4"/><path d="M8 5v3l2 2" stroke="currentColor" stroke-width="1.2"/></svg>
+            <span>Run Inactivity Ping Sweep</span>
+          </button>
+          <button id="admin-mount-public-btn" class="primary-btn icon-btn" title="Add cloud node to Public Storage pool">
+            <svg viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/></svg>
+            <span>Mount Public Cloud Node</span>
+          </button>
+        </div>
       </div>
 
       <p class="panel-desc">
-        Storage nodes operate as an immutable, sharded virtual pool. High-capacity files are split across nodes automatically and reassembled seamlessly during streaming.
+        Administrative governance for <strong>sagnik.saha.raptor@gmail.com</strong>. Manage registered tenants, completely wipe user accounts and their associated cloud files, and manage the Public Storage pool for manual tenant capacity allocation.
+      </p>
+
+      <!-- Cloud Heartbeat Status Banner -->
+      <div class="pool-bar-wrap" style="margin-bottom: 16px;">
+        <div class="pool-bar-metrics-row">
+          <span class="pool-metric-title">CLOUD INACTIVITY PROTECTION STATUS</span>
+          <span id="admin-heartbeat-status-text" class="pool-metric-val">Checking heartbeat telemetry…</span>
+        </div>
+      </div>
+
+      <!-- Super-Admin Navigation Tabs -->
+      <div class="filter-pills-row" style="margin-bottom: 14px;">
+        <button id="admin-tab-users" class="filter-pill active">Tenant Users (<span id="admin-user-count">0</span>)</button>
+        <button id="admin-tab-public" class="filter-pill">Public Storage Nodes (<span id="admin-public-node-count">0</span>)</button>
+      </div>
+
+      <!-- Admin Tab 1: Users Table -->
+      <div id="admin-users-view">
+        <div class="files-table-wrap">
+          <table class="files-table">
+            <thead>
+              <tr>
+                <th>Tenant Email</th>
+                <th>User ID</th>
+                <th>Objects</th>
+                <th>Personal Nodes</th>
+                <th>Allocated Public Nodes</th>
+                <th class="text-right">Admin Actions</th>
+              </tr>
+            </thead>
+            <tbody id="admin-users-tbody">
+              <tr class="skeleton-row"><td colspan="6"><div class="skeleton-line"></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Admin Tab 2: Public Storage Nodes -->
+      <div id="admin-public-view" class="hidden">
+        <div id="admin-public-nodes-list" class="accounts-list" style="margin-bottom: 14px;">
+          <div class="skeleton-card"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Feature 6: Analytics Dashboard Scorecard Grid -->
+    <section class="analytics-scorecard-grid">
+      <div class="scorecard-item">
+        <div class="scorecard-top">
+          <span class="scorecard-label">Total Pool Capacity</span>
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="10" stroke="currentColor" stroke-width="1.4"/><path d="M2 7h12" stroke="currentColor" stroke-width="1.2"/></svg>
+        </div>
+        <div id="stat-total-capacity" class="scorecard-value">0 B</div>
+        <div id="stat-node-count" class="scorecard-meta">0 storage nodes mounted</div>
+      </div>
+
+      <div class="scorecard-item">
+        <div class="scorecard-top">
+          <span class="scorecard-label">Lake Storage Ingested</span>
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 2v9M8 11l-3-3M8 11l3-3M3 13h10" stroke="currentColor" stroke-width="1.4"/></svg>
+        </div>
+        <div id="stat-used-capacity" class="scorecard-value">0 B</div>
+        <div id="stat-utilization-pct" class="scorecard-meta">0% capacity utilized</div>
+      </div>
+
+      <div class="scorecard-item">
+        <div class="scorecard-top">
+          <span class="scorecard-label">Total Objects</span>
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="3" y="2" width="10" height="12" stroke="currentColor" stroke-width="1.4"/><path d="M6 6h4M6 9h4" stroke="currentColor" stroke-width="1.2"/></svg>
+        </div>
+        <div id="stat-file-count" class="scorecard-value">0</div>
+        <div id="stat-shard-count" class="scorecard-meta">0 total sharded pieces</div>
+      </div>
+
+      <div class="scorecard-item">
+        <div class="scorecard-top">
+          <span class="scorecard-label">Free Lake Quota</span>
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.4"/><path d="M8 5v3l2 2" stroke="currentColor" stroke-width="1.2"/></svg>
+        </div>
+        <div id="stat-free-capacity" class="scorecard-value">0 B</div>
+        <div class="scorecard-meta">Available for ingestion</div>
+      </div>
+    </section>
+
+    <!-- Storage Nodes & Capacity Panel -->
+    <section class="panel">
+      <div class="panel-header">
+        <div class="panel-header-left">
+          <div class="panel-category">CLUSTER TOPOLOGY</div>
+          <h2>Distributed Storage Nodes</h2>
+        </div>
+        <div class="panel-header-actions">
+          <button id="add-account-btn" class="primary-btn icon-btn" title="Mount a new storage node [N]">
+            <svg viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/></svg>
+            <span>Mount Storage Node</span>
+          </button>
+        </div>
+      </div>
+
+      <p class="panel-desc">
+        Active storage nodes form an immutable, sharded virtual drive. Files exceeding chunk thresholds are sharded across nodes automatically and reassembled seamlessly during streaming.
       </p>
 
       <div class="pool-bar-wrap">
         <div class="pool-bar-metrics-row">
-          <span class="pool-metric-title">AGGREGATE POOL ALLOCATION</span>
-          <span id="pool-summary-text" class="pool-metric-val">Calculating lake capacity…</span>
+          <span class="pool-metric-title">AGGREGATE LAKE UTILIZATION</span>
+          <span id="pool-summary-text" class="pool-metric-val">Calculating lake quota…</span>
         </div>
         <div class="pool-bar">
           <div id="pool-bar-fill" class="pool-bar-fill"></div>
         </div>
+        
+        <!-- Feature 7: Storage Load Balancer Advisor -->
+        <div class="lake-advisor-box">
+          <div>
+            <span class="lake-advisor-tag">LAKE ADVISOR:</span>
+            <span id="lake-advisor-text">Cluster balanced. All mounted nodes operating within target threshold.</span>
+          </div>
+          <span class="muted" style="font-family: 'JetBrains Mono', monospace; font-size: 11px;">Bin-Packing: Active</span>
+        </div>
       </div>
 
-      <div class="nodes-section-title">ACTIVE STORAGE NODES</div>
+      <div class="nodes-header-row">
+        <div class="nodes-section-title">MOUNTED STORAGE NODES (CLICK CARD TO FILTER OBJECTS)</div>
+        <button id="reset-node-filter-btn" class="nodes-filter-reset hidden">Clear node filter</button>
+      </div>
+
       <div id="accounts-list" class="accounts-list">
         <div class="skeleton-card"></div>
         <div class="skeleton-card"></div>
@@ -264,13 +388,72 @@
     <!-- Lake Objects Panel -->
     <section class="panel">
       <div class="panel-header">
-        <div>
-          <div class="panel-category">STORAGE OBJECTS</div>
-          <h2>Data Lake Files</h2>
+        <div class="panel-header-left">
+          <div class="panel-category">DATA LAKE OBJECTS</div>
+          <h2>Ingested File Repository</h2>
+        </div>
+        
+        <div class="panel-header-actions">
+          <!-- Feature 8: Export Lake Manifest -->
+          <button id="export-manifest-json" class="secondary icon-btn" title="Export Manifest as JSON">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 13h10M8 2v8M5 7l3 3 3-3" stroke="currentColor" stroke-width="1.4"/></svg>
+            <span>Export Manifest</span>
+          </button>
+
+          <!-- Feature 4: View Mode Switcher -->
+          <div class="view-toggle-wrap">
+            <button id="view-table-btn" class="view-toggle-btn active" title="Table View [V]">
+              <svg viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="10" stroke="currentColor" stroke-width="1.4"/><path d="M2 7h12M6 7v6" stroke="currentColor" stroke-width="1.2"/></svg>
+            </button>
+            <button id="view-grid-btn" class="view-toggle-btn" title="Grid View [V]">
+              <svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" stroke="currentColor" stroke-width="1.4"/><rect x="9" y="2" width="5" height="5" stroke="currentColor" stroke-width="1.4"/><rect x="2" y="9" width="5" height="5" stroke="currentColor" stroke-width="1.4"/><rect x="9" y="9" width="5" height="5" stroke="currentColor" stroke-width="1.4"/></svg>
+            </button>
+          </div>
         </div>
       </div>
 
-      <!-- Dropzone -->
+      <!-- Feature 1 & 2: Toolbar with Live Search, Filter Pills & Sorting -->
+      <div class="objects-toolbar">
+        <div class="toolbar-primary-row">
+          <div class="search-input-wrap">
+            <svg class="search-icon" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.4"/><path d="M10.5 10.5l3 3" stroke="currentColor" stroke-width="1.4"/></svg>
+            <input id="object-search-input" class="search-input" type="text" placeholder="Search objects by name, extension, or shard label…" />
+            <span class="search-shortcut-hint">/</span>
+          </div>
+
+          <!-- Feature 3: Sort Selector -->
+          <div class="toolbar-controls">
+            <label for="sort-select" class="muted" style="font-size: 11.5px; font-weight: 600;">Sort:</label>
+            <select id="sort-select" class="sort-select">
+              <option value="date-desc">Newest First</option>
+              <option value="date-asc">Oldest First</option>
+              <option value="size-desc">Size: Largest</option>
+              <option value="size-asc">Size: Smallest</option>
+              <option value="name-asc">Name: A to Z</option>
+              <option value="name-desc">Name: Z to A</option>
+              <option value="shards-desc">Most Shards</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Feature 2: Category Filter Pills -->
+        <div class="filter-pills-row">
+          <button class="filter-pill active" data-filter="all">All Objects (<span id="count-all">0</span>)</button>
+          <button class="filter-pill" data-filter="dataset">Datasets (<span id="count-dataset">0</span>)</button>
+          <button class="filter-pill" data-filter="document">Documents (<span id="count-document">0</span>)</button>
+          <button class="filter-pill" data-filter="archive">Archives &amp; Binaries (<span id="count-archive">0</span>)</button>
+          <button class="filter-pill" data-filter="media">Media (<span id="count-media">0</span>)</button>
+          <button class="filter-pill" data-filter="code">Code &amp; Text (<span id="count-code">0</span>)</button>
+        </div>
+
+        <!-- Feature 10: Active Node Filter Indicator Banner -->
+        <div id="active-node-banner" class="active-node-banner hidden">
+          <span>Filtering objects isolated to node: <strong id="active-node-label-text"></strong></span>
+          <button id="clear-node-filter" class="nodes-filter-reset">Show all objects</button>
+        </div>
+      </div>
+
+      <!-- Ingestion Dropzone -->
       <div id="dropzone" class="dropzone">
         <div class="dropzone-icon-wrap">
           <svg class="dropzone-icon" viewBox="0 0 40 40" fill="none">
@@ -278,11 +461,11 @@
             <path d="M8 27v5h24v-5" stroke="currentColor" stroke-width="2" stroke-linecap="square"/>
           </svg>
         </div>
-        <div class="dropzone-title">Drop objects here to ingest into SoTaNik_AI Data Lake</div>
-        <p class="dropzone-sub">Supports large files with automated multi-node chunk sharding</p>
+        <div class="dropzone-title">Drop files here for distributed lake ingestion</div>
+        <p class="dropzone-sub">Supports single or batch file uploads with automatic multi-node chunk sharding</p>
         <label class="primary-btn file-input-label">
-          <span>Browse Local Files</span>
-          <input id="file-input" type="file" hidden />
+          <span>Choose Local Files [U]</span>
+          <input id="file-input" type="file" multiple hidden />
         </label>
         <div id="upload-progress-wrap" class="upload-progress-wrap hidden">
           <div class="upload-progress-bar"><div id="upload-progress-fill"></div></div>
@@ -290,15 +473,15 @@
         </div>
       </div>
 
-      <!-- Files Table -->
+      <!-- Files Table View -->
       <div id="files-table-wrap" class="files-table-wrap">
         <table class="files-table">
           <thead>
             <tr>
-              <th>Object Name</th>
-              <th>Size</th>
-              <th>Node Distribution</th>
-              <th>Ingested At</th>
+              <th data-sort-key="name">Object Name</th>
+              <th data-sort-key="size">Size</th>
+              <th data-sort-key="shards">Shard Distribution</th>
+              <th data-sort-key="date">Ingested Date</th>
               <th class="text-right">Actions</th>
             </tr>
           </thead>
@@ -309,12 +492,36 @@
         </table>
       </div>
 
+      <!-- Feature 4: Files Grid View -->
+      <div id="files-grid-wrap" class="files-grid-wrap hidden"></div>
+
+      <!-- Empty State -->
       <div id="no-files-msg" class="files-empty hidden">
         <div class="empty-icon-wrap">
           <svg viewBox="0 0 40 40" fill="none"><rect x="8" y="8" width="24" height="24" stroke="currentColor" stroke-width="1.8" stroke-dasharray="4 4"/><path d="M15 20h10M20 15v10" stroke="currentColor" stroke-width="1.6" stroke-linecap="square"/></svg>
         </div>
-        <p class="empty-title">Data Lake is Empty</p>
-        <p class="empty-desc">Ingest your first dataset or object using the upload dropzone above.</p>
+        <p class="empty-title">No Objects Match Filter</p>
+        <p class="empty-desc">Ingest datasets or files using the upload zone above or clear current filters.</p>
+      </div>
+    </section>
+
+    <!-- Feature 9: Activity Audit Log Panel -->
+    <section class="panel audit-log-panel">
+      <div class="panel-header">
+        <div>
+          <div class="panel-category">AUDIT &amp; TELEMETRY</div>
+          <h2>Recent Lake Ingestion Activity</h2>
+        </div>
+        <button id="clear-activity-btn" class="ghost" style="font-size: 11px; padding: 4px 8px;">Clear Audit Log</button>
+      </div>
+      <div id="activity-timeline" class="activity-timeline">
+        <div class="timeline-item">
+          <div class="timeline-item-left">
+            <span class="timeline-type-tag">CLUSTER</span>
+            <span>Cluster telemetry initialized. Storage pool operational.</span>
+          </div>
+          <span class="timeline-time">Just now</span>
+        </div>
       </div>
     </section>
   </main>
@@ -326,11 +533,11 @@
 <!-- Share Modal -->
 <div id="share-modal" class="modal hidden">
   <div class="modal-card">
-    <div class="modal-badge">OBJECT ACCESS</div>
+    <div class="modal-badge">OBJECT STREAMING</div>
     <h2>Generate Public Share Link</h2>
     
     <div id="share-modal-create">
-      <p class="muted">Anyone in possession of this signed token URL can stream this object without authentication.</p>
+      <p class="muted">Anyone in possession of this signed token URL can stream this object without an account.</p>
       <div class="form-group modal-field">
         <label class="form-label" for="share-expiry">Link Validity Period</label>
         <select id="share-expiry">
@@ -343,20 +550,20 @@
       </div>
       <div class="modal-actions">
         <button type="button" id="cancel-share" class="ghost">Dismiss</button>
-        <button type="button" id="create-share-btn" class="primary-btn">Generate Token Link</button>
+        <button type="button" id="create-share-btn" class="primary-btn">Generate Access URL</button>
       </div>
     </div>
 
     <div id="share-modal-result" class="hidden">
-      <p class="muted">Access URL Generated:</p>
+      <p class="muted">Stream Access Link:</p>
       <div class="share-link-row">
         <input id="share-link-output" type="text" readonly />
-        <button type="button" id="copy-share-link" class="secondary">Copy URL</button>
+        <button type="button" id="copy-share-link" class="secondary">Copy</button>
       </div>
       <p id="share-expiry-note" class="share-expiry-indicator"></p>
       <div class="modal-actions">
         <button type="button" id="revoke-share-btn" class="ghost danger-text">Revoke Access Link</button>
-        <button type="button" id="close-share-modal" class="primary-btn">Close</button>
+        <button type="button" id="close-share-modal" class="primary-btn">Done</button>
       </div>
     </div>
 
@@ -367,9 +574,9 @@
 <!-- Add Storage Node Modal -->
 <div id="add-account-modal" class="modal hidden">
   <form id="add-account-form" class="modal-card">
-    <div class="modal-badge">NODE CLUSTERING</div>
-    <h2>Connect Storage Node</h2>
-    <p class="muted">Credentials are AES-256 encrypted at rest and utilized exclusively to bridge storage quota into SoTaNik_AI Data Lake.</p>
+    <div class="modal-badge">NODE TOPOLOGY</div>
+    <h2>Mount Storage Node</h2>
+    <p class="muted">Credentials are AES-256 encrypted at rest and solely used to bridge quota into SoTaNik_AI Data Lake.</p>
     
     <div class="form-group">
       <label class="form-label" for="acc-label">Node Identifier</label>
@@ -398,6 +605,175 @@
     
     <p id="add-account-error" class="error hidden"></p>
   </form>
+</div>
+
+<!-- Feature 5: Shard Inspector Modal -->
+<div id="shard-inspector-modal" class="modal hidden">
+  <div class="modal-card">
+    <div class="modal-badge">SHARD INSPECTOR</div>
+    <h2 id="inspector-file-name">Object Shard Allocation</h2>
+    <p class="muted">Visual mapping of how this object is sharded and distributed across mounted storage nodes.</p>
+    
+    <div class="scorecard-item" style="padding: 10px;">
+      <div style="font-size: 11px; font-weight: 700; color: var(--muted);">OBJECT IDENTIFIER</div>
+      <div id="inspector-file-id" style="font-family: 'JetBrains Mono', monospace; font-size: 12px; word-break: break-all; margin-top: 4px;"></div>
+    </div>
+
+    <div style="font-size: 11px; font-weight: 700; color: var(--muted); margin-top: 4px;">SHARD CHUNK MAP:</div>
+    <div id="inspector-chunks-list" class="shard-inspector-list"></div>
+
+    <div class="modal-actions">
+      <button type="button" id="close-inspector-modal" class="primary-btn">Close Inspector</button>
+    </div>
+  </div>
+</div>
+
+<!-- Feature 19: Keyboard Shortcuts Cheatsheet Modal -->
+<div id="shortcuts-modal" class="modal hidden">
+  <div class="modal-card">
+    <div class="modal-badge">PRODUCTIVITY</div>
+    <h2>Keyboard Shortcuts</h2>
+    <p class="muted">Navigate SoTaNik_AI Data Lake with precision keyboard commands.</p>
+
+    <div class="shortcuts-grid">
+      <div class="shortcut-row">
+        <span>Focus search bar</span>
+        <span class="shortcut-key">/</span>
+      </div>
+      <div class="shortcut-row">
+        <span>Upload local files</span>
+        <span class="shortcut-key">U</span>
+      </div>
+      <div class="shortcut-row">
+        <span>Mount new node</span>
+        <span class="shortcut-key">N</span>
+      </div>
+      <div class="shortcut-row">
+        <span>Toggle Table/Grid view</span>
+        <span class="shortcut-key">V</span>
+      </div>
+      <div class="shortcut-row">
+        <span>Toggle Dark/Light theme</span>
+        <span class="shortcut-key">M</span>
+      </div>
+      <div class="shortcut-row">
+        <span>Shortcuts cheatsheet</span>
+        <span class="shortcut-key">?</span>
+      </div>
+      <div class="shortcut-row">
+        <span>Dismiss open modal</span>
+        <span class="shortcut-key">Esc</span>
+      </div>
+      <div class="shortcut-row">
+        <span>Reload lake objects</span>
+        <span class="shortcut-key">R</span>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" id="close-shortcuts-modal" class="primary-btn">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Feature 16: Cryptographic Vault Modal -->
+<div id="vault-modal" class="modal hidden">
+  <div class="modal-card">
+    <div class="modal-badge">CRYPTOGRAPHIC ATTESTATION</div>
+    <h2>Vault &amp; Encryption Specifications</h2>
+    <p class="muted">Details on how data objects and node keys are shielded inside SoTaNik_AI Data Lake.</p>
+
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <div class="scorecard-item">
+        <div style="font-weight: 700; font-size: 12px; color: var(--text);">AES-256-GCM Envelope Encryption</div>
+        <div class="muted" style="font-size: 11.5px;">All node credentials and sensitive connection parameters are encrypted with an isolated 256-bit master key before touching Postgres storage.</div>
+      </div>
+      <div class="scorecard-item">
+        <div style="font-weight: 700; font-size: 12px; color: var(--text);">Row-Level Security (RLS) Enforcement</div>
+        <div class="muted" style="font-size: 11.5px;">Database rows are bound to tenant UUID (<code style="font-family: 'JetBrains Mono';">auth.uid() = user_id</code>), ensuring zero cross-tenant row contamination.</div>
+      </div>
+      <div class="scorecard-item">
+        <div style="font-weight: 700; font-size: 12px; color: var(--text);">Stateless JWT Authorization</div>
+        <div class="muted" style="font-size: 11.5px;">API endpoints verify fresh signed bearer tokens on every transaction. No session state is leaked to disk.</div>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" id="close-vault-modal" class="primary-btn">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Super-Admin Wipe User & Cloud Storage Modal -->
+<div id="admin-wipe-modal" class="modal hidden">
+  <div class="modal-card">
+    <div class="modal-badge" style="color: var(--danger);">IRREVERSIBLE TENANT PURGE</div>
+    <h2>Wipe User &amp; Cloud Files</h2>
+    <p class="muted">
+      You are about to permanently delete tenant <strong id="wipe-user-email"></strong> (<span id="wipe-user-id" style="font-family: 'JetBrains Mono'; font-size: 11px;"></span>).
+    </p>
+    <div class="scorecard-item" style="border-color: var(--danger-border); background: var(--danger-light); color: var(--danger); padding: 12px;">
+      <div style="font-weight: 700; font-size: 12px;">Full Physical Cloud Data Deletion:</div>
+      <div style="font-size: 11.5px; margin-top: 2px;">
+        Every file piece sharded across all cloud storage accounts will be wiped. Database entries, allocations, and Supabase Auth credentials will be completely destroyed.
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button type="button" id="cancel-wipe-btn" class="ghost">Cancel</button>
+      <button type="button" id="confirm-wipe-btn" class="primary-btn" style="background: var(--danger); border-color: var(--danger);">Confirm Complete Wipe</button>
+    </div>
+  </div>
+</div>
+
+<!-- Super-Admin Mount Public Storage Modal -->
+<div id="admin-mount-public-modal" class="modal hidden">
+  <form id="admin-mount-public-form" class="modal-card">
+    <div class="modal-badge">PUBLIC STORAGE POOL</div>
+    <h2>Mount Public Cloud Node</h2>
+    <p class="muted">Connect a cloud account to the Public Storage pool. You can allocate this node to specific tenants as extra storage.</p>
+    
+    <div class="form-group">
+      <label class="form-label" for="pub-acc-label">Public Node Identifier</label>
+      <input id="pub-acc-label" placeholder="e.g. public-vault-01" required />
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="pub-acc-email">Cloud Account Email</label>
+      <input id="pub-acc-email" type="email" placeholder="public-cloud@domain.com" required autocomplete="off" />
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="pub-acc-password">Account Password</label>
+      <input id="pub-acc-password" type="password" placeholder="Account credential password" required autocomplete="off" />
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="pub-acc-notes">Notes / Purpose</label>
+      <input id="pub-acc-notes" placeholder="e.g. 50GB Shared Pool for Research team" />
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" id="cancel-mount-public" class="ghost">Cancel</button>
+      <button type="submit" class="primary-btn">Mount Public Node</button>
+    </div>
+    <p id="admin-mount-public-error" class="error hidden"></p>
+  </form>
+</div>
+
+<!-- Super-Admin Allocate Public Node Modal -->
+<div id="admin-allocate-modal" class="modal hidden">
+  <div class="modal-card">
+    <div class="modal-badge">TENANT CAPACITY ALLOCATION</div>
+    <h2>Allocate Public Storage Node</h2>
+    <p class="muted">Assign public node <strong id="allocate-node-label"></strong> to a tenant as extra pooled storage capacity.</p>
+    
+    <div class="form-group">
+      <label class="form-label" for="allocate-user-select">Select Tenant</label>
+      <select id="allocate-user-select"></select>
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" id="cancel-allocate" class="ghost">Cancel</button>
+      <button type="button" id="confirm-allocate-btn" class="primary-btn">Grant Allocation</button>
+    </div>
+  </div>
 </div>
 
 <script src="/app.js"></script>
