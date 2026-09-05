@@ -1,7 +1,7 @@
 {
-  "name": "megapool",
+  "name": "sotanik-ai-data-lake",
   "version": "1.0.0",
-  "description": "Unified web storage pool that combines multiple MEGA.nz accounts into one virtual drive",
+  "description": "SoTaNik_AI Data Lake — Unified virtual storage pool combining storage nodes into one virtual drive",
   "main": "server.js",
   "type": "commonjs",
   "engines": { "node": ">=18.0.0" },

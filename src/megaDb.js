@@ -32,8 +32,9 @@ const db = require('./db');
 //   this keyword," which is what was actually asked for.
 // ============================================================================
 
-const CATALOG_FILENAME = '.megapool_catalog.json';
-// 200MB per segment: fewer MEGA files/uploads for a given dataset size, at the
+const CATALOG_FILENAME = '.sotanik_catalog.json';
+const LEGACY_CATALOG_FILENAME = '.megapool_catalog.json';
+// 200MB per segment: fewer storage files/uploads for a given dataset size, at the
 // cost of a bigger worst-case download per search hit (see notes above — a hit
 // costs "download that hit's whole segment," not a byte-exact fetch, since
 // megajs has no true range-download support). Smaller segments trade the other
@@ -61,11 +62,11 @@ async function uploadBuffer(storage, name, buffer) {
 async function pickAccountWithMostFreeSpace(userId) {
   const summary = await megaAccounts.getPoolSummary(userId);
   const target = summary.accounts.filter((a) => a.status === 'ok').sort((a, b) => b.spaceFree - a.spaceFree)[0];
-  if (!target) throw new Error('No usable MEGA account with free space. Add or reconnect an account first.');
+  if (!target) throw new Error('No usable storage account with free space. Add or reconnect an account first.');
   return target.label;
 }
 
-// ---------------- Catalog (lives on MEGA, not Supabase) ----------------
+// ---------------- Catalog (lives on storage lake, not Supabase) ----------------
 
 async function findCatalogLocation(userId) {
   const accounts = await db.listAccounts(userId);
@@ -76,7 +77,9 @@ async function findCatalogLocation(userId) {
     } catch (err) {
       continue; // skip accounts that can't currently log in; don't fail the whole lookup
     }
-    const node = Object.values(storage.files || {}).find((f) => f.name === CATALOG_FILENAME);
+    const node = Object.values(storage.files || {}).find(
+      (f) => f.name === CATALOG_FILENAME || f.name === LEGACY_CATALOG_FILENAME
+    );
     if (node) return { label: acc.label, storage, node };
   }
   return null;
@@ -90,7 +93,7 @@ async function loadCatalog(userId) {
     const parsed = JSON.parse(buf.toString('utf8'));
     return { tables: parsed.tables || {} };
   } catch (err) {
-    throw new Error('The database catalog file on MEGA is corrupted or unreadable.');
+    throw new Error('The database catalog file on the storage lake is corrupted or unreadable.');
   }
 }
 

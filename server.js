@@ -22,7 +22,7 @@ app.set('trust proxy', 1); // needed for correct protocol/host behind Render's p
 
 app.use(express.json());
 
-// Cheap, unauthenticated, no external calls (Supabase/MEGA) — this is what both
+// Cheap, unauthenticated, no external calls (Supabase/storage nodes) — this is what both
 // the self-ping keep-alive (src/keepAlive.js) and any external uptime monitor
 // should hit. Deliberately lightweight so pinging it every few minutes forever
 // costs effectively nothing.
@@ -53,12 +53,12 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, () => {
-  console.log(`MegaPool listening on port ${PORT}`);
+  console.log(`SoTaNik_AI Data Lake listening on port ${PORT}`);
   console.log(`[supabase] Using project: ${process.env.SUPABASE_URL}`);
 });
 
 // Uploads for large files take a while: the server receives the file from the
-// browser, THEN re-uploads it to MEGA, all within the same request/response cycle
+// browser, THEN re-uploads it to the storage lake, all within the same request/response cycle
 // — so a big file can easily take several minutes end-to-end, especially on a
 // slower connection. Node's defaults (headersTimeout: 60s, requestTimeout: 5min)
 // are tuned for typical API requests and will silently kill a slow upload partway

@@ -23,7 +23,7 @@ function planPlacement(fileSize, accounts, chunkMaxBytes) {
     .sort((a, b) => b.free - a.free);
 
   if (avail.length === 0) {
-    throw new Error('No usable MEGA accounts with free space. Add or reconnect an account first.');
+    throw new Error('No usable storage accounts with free space. Add or reconnect an account first.');
   }
 
   const totalFree = avail.reduce((sum, a) => sum + a.free, 0);

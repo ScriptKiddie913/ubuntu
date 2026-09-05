@@ -3,75 +3,132 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<meta name="description" content="MegaPool — combine multiple MEGA.nz accounts into one virtual storage pool." />
-<meta name="theme-color" content="#08090b" />
-<title>MegaPool — combined MEGA storage</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2308090b'/%3E%3Crect x='8' y='8' width='16' height='16' fill='%23ff4136'/%3E%3C/svg%3E" />
+<meta name="description" content="SoTaNik_AI Data Lake — Combine distributed storage accounts into one unified high-performance virtual storage lake." />
+<meta name="theme-color" content="#2563eb" />
+<title>SoTaNik_AI Data Lake — Unified Virtual Storage</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%232563eb'/%3E%3Crect x='8' y='8' width='16' height='16' fill='%23ffffff'/%3E%3Crect x='12' y='12' width='8' height='8' fill='%232563eb'/%3E%3C/svg%3E" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="/styles.css" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
-<!-- Shown immediately on load, before anything else has had a chance to run —
-     this is what you see instead of a blank page while the app boots, and
-     what stays on screen (swapped for an error panel) if boot ever fails. -->
+<!-- Boot Screen -->
 <div id="boot-screen" class="screen boot-screen">
   <div class="boot-inner">
-    <div class="boot-mark"></div>
-    <div class="boot-spinner"><span></span><span></span><span></span><span></span></div>
-    <p id="boot-status" class="muted">Loading MegaPool…</p>
+    <div class="boot-mark">
+      <div class="boot-mark-inner"></div>
+    </div>
+    <div class="boot-spinner">
+      <span></span><span></span><span></span><span></span>
+    </div>
+    <p id="boot-status" class="muted">Initializing SoTaNik_AI Data Lake…</p>
   </div>
   <div id="boot-error" class="boot-error hidden">
     <div class="boot-error-card">
-      <h2>Couldn't start MegaPool</h2>
+      <div class="error-badge">STARTUP ERROR</div>
+      <h2>Couldn't start SoTaNik_AI Data Lake</h2>
       <p id="boot-error-message" class="muted"></p>
-      <button type="button" id="boot-retry-btn">Retry</button>
+      <button type="button" id="boot-retry-btn" class="primary-btn">Retry Connection</button>
     </div>
   </div>
 </div>
 
+<!-- Login / Sign-up Screen -->
 <div id="login-screen" class="screen hidden">
   <div class="login-decor" aria-hidden="true">
     <span class="decor-sq sq-1"></span>
     <span class="decor-sq sq-2"></span>
     <span class="decor-sq sq-3"></span>
     <span class="decor-sq sq-4"></span>
+    <div class="decor-grid-pattern"></div>
   </div>
 
   <div class="login-layout">
+    <!-- Hero Column -->
     <div class="login-hero">
-      <div class="hero-mark-row">
-        <div class="brand-mark brand-mark-lg"><span></span></div>
+      <div class="hero-status-pill">
+        <span class="status-dot"></span>
+        <span>AI DATA LAKE ARCHITECTURE &bull; ENTERPRISE V2.4</span>
       </div>
-      <h1 class="hero-title">MegaPool</h1>
-      <p class="hero-tagline">Every MEGA account you own, combined into one storage pool — encrypted, searchable, and yours alone.</p>
+      
+      <div class="hero-brand-row">
+        <div class="brand-symbol">
+          <div class="brand-symbol-box"></div>
+        </div>
+        <h1 class="hero-title">SoTaNik_AI<br/><span class="hero-title-sub">Data Lake</span></h1>
+      </div>
+
+      <p class="hero-tagline">
+        Aggregate disparate storage accounts into a unified, high-throughput virtual data lake. Automated chunk sharding, AES-256 envelope security, and instant object retrieval.
+      </p>
+
+      <div class="hero-metrics-grid">
+        <div class="hero-metric-card">
+          <div class="metric-num">0%</div>
+          <div class="metric-label">Data Fragmentation</div>
+        </div>
+        <div class="hero-metric-card">
+          <div class="metric-num">256-bit</div>
+          <div class="metric-label">Vault Encryption</div>
+        </div>
+        <div class="hero-metric-card">
+          <div class="metric-num">100%</div>
+          <div class="metric-label">Tenant Isolation</div>
+        </div>
+      </div>
 
       <ul class="hero-features">
         <li>
-          <svg viewBox="0 0 20 20" fill="none"><rect x="3" y="3" width="6" height="6" stroke="currentColor" stroke-width="1.4"/><rect x="11" y="3" width="6" height="6" stroke="currentColor" stroke-width="1.4"/><rect x="3" y="11" width="6" height="6" stroke="currentColor" stroke-width="1.4"/><rect x="11" y="11" width="6" height="6" stroke="currentColor" stroke-width="1.4"/></svg>
-          <div><strong>Unified pool</strong><span>Connect several MEGA accounts, use them as one combined drive.</span></div>
+          <div class="feature-icon">
+            <svg viewBox="0 0 20 20" fill="none"><rect x="3" y="3" width="6" height="6" stroke="currentColor" stroke-width="1.5"/><rect x="11" y="3" width="6" height="6" stroke="currentColor" stroke-width="1.5"/><rect x="3" y="11" width="6" height="6" stroke="currentColor" stroke-width="1.5"/><rect x="11" y="11" width="6" height="6" stroke="currentColor" stroke-width="1.5"/></svg>
+          </div>
+          <div>
+            <strong>Virtual Lake Sharding</strong>
+            <span>Pool unlimited storage nodes into one unified, seamless virtual drive.</span>
+          </div>
         </li>
         <li>
-          <svg viewBox="0 0 20 20" fill="none"><rect x="4" y="8" width="12" height="9" stroke="currentColor" stroke-width="1.4"/><path d="M6.5 8V6a3.5 3.5 0 017 0v2" stroke="currentColor" stroke-width="1.4"/></svg>
-          <div><strong>Encrypted credentials</strong><span>MEGA account passwords are AES-256 encrypted at rest, key held separately.</span></div>
+          <div class="feature-icon">
+            <svg viewBox="0 0 20 20" fill="none"><rect x="4" y="8" width="12" height="9" stroke="currentColor" stroke-width="1.5"/><path d="M6.5 8V6a3.5 3.5 0 017 0v2" stroke="currentColor" stroke-width="1.5"/></svg>
+          </div>
+          <div>
+            <strong>Zero-Knowledge Credentials</strong>
+            <span>Node keys are AES-256-GCM encrypted with a discrete master key.</span>
+          </div>
         </li>
         <li>
-          <svg viewBox="0 0 20 20" fill="none"><circle cx="8.5" cy="8.5" r="5" stroke="currentColor" stroke-width="1.4"/><path d="M15 15l-3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="square"/></svg>
-          <div><strong>Keyword search</strong><span>Search across huge datasets stored on MEGA without downloading everything.</span></div>
+          <div class="feature-icon">
+            <svg viewBox="0 0 20 20" fill="none"><circle cx="8.5" cy="8.5" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M15 15l-3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/></svg>
+          </div>
+          <div>
+            <strong>Fast Stream Ingestion</strong>
+            <span>Stream, chunk, and index massive binary or dataset files transparently.</span>
+          </div>
         </li>
         <li>
-          <svg viewBox="0 0 20 20" fill="none"><circle cx="15" cy="5" r="2" stroke="currentColor" stroke-width="1.3"/><circle cx="5" cy="10" r="2" stroke="currentColor" stroke-width="1.3"/><circle cx="15" cy="15" r="2" stroke="currentColor" stroke-width="1.3"/><path d="M6.7 9l6.6-3M6.7 11l6.6 3" stroke="currentColor" stroke-width="1.2"/></svg>
-          <div><strong>Share links</strong><span>Hand out a link to one file, with or without an expiry — no account needed to open it.</span></div>
+          <div class="feature-icon">
+            <svg viewBox="0 0 20 20" fill="none"><circle cx="15" cy="5" r="2.2" stroke="currentColor" stroke-width="1.5"/><circle cx="5" cy="10" r="2.2" stroke="currentColor" stroke-width="1.5"/><circle cx="15" cy="15" r="2.2" stroke="currentColor" stroke-width="1.5"/><path d="M7 9.2l6-3.2M7 10.8l6 3.2" stroke="currentColor" stroke-width="1.4"/></svg>
+          </div>
+          <div>
+            <strong>Granular Access Sharing</strong>
+            <span>Publish secure, time-expiring direct access links with instant revocation.</span>
+          </div>
         </li>
       </ul>
     </div>
 
+    <!-- Auth Card Column -->
     <div class="login-card">
       <div class="login-card-topline"></div>
-      <h2 class="login-card-title">Get started</h2>
+      
+      <div class="login-card-header">
+        <div class="auth-brand-badge">PORTAL ACCESS</div>
+        <h2 class="login-card-title">Access Data Lake</h2>
+        <p class="auth-subtitle">Sign in or create your tenant credentials to manage your data lake cluster.</p>
+      </div>
 
       <div class="auth-tabs">
         <button type="button" id="tab-signin" class="auth-tab active">Sign in</button>
@@ -79,61 +136,124 @@
         <span id="auth-tab-indicator" class="auth-tab-indicator"></span>
       </div>
 
+      <!-- Sign In Form -->
       <form id="signin-form" class="auth-form">
-        <p class="muted">Sign in to your MegaPool dashboard.</p>
-        <input id="signin-email" type="email" placeholder="Email" autocomplete="email" required />
-        <input id="signin-password" type="password" placeholder="Password" autocomplete="current-password" required />
-        <button type="submit">Sign in</button>
-        <p id="signin-error" class="error hidden"></p>
+        <div class="form-group">
+          <label class="form-label" for="signin-email">Account Email</label>
+          <input id="signin-email" type="email" placeholder="name@company.com" autocomplete="email" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="signin-password">Password</label>
+          <input id="signin-password" type="password" placeholder="Enter your password" autocomplete="current-password" required />
+        </div>
+        <button type="submit" class="primary-btn auth-submit-btn">
+          <span>Authenticate &amp; Enter</span>
+          <svg viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="square"/></svg>
+        </button>
+        <div id="signin-error" class="error-banner hidden"></div>
       </form>
 
+      <!-- Sign Up Form -->
       <form id="signup-form" class="auth-form hidden">
-        <p class="muted">Create an account. We'll email you a link to verify before you can sign in.</p>
-        <input id="signup-email" type="email" placeholder="Email" autocomplete="email" required />
-        <input id="signup-password" type="password" placeholder="Password (min 6 characters)" autocomplete="new-password" minlength="6" required />
-        <input id="signup-password-confirm" type="password" placeholder="Confirm password" autocomplete="new-password" minlength="6" required />
-        <button type="submit">Create account</button>
-        <p id="signup-error" class="error hidden"></p>
+        <div class="form-group">
+          <label class="form-label" for="signup-email">Business or Personal Email</label>
+          <input id="signup-email" type="email" placeholder="name@company.com" autocomplete="email" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="signup-password">Create Password</label>
+          <input id="signup-password" type="password" placeholder="Minimum 6 characters" autocomplete="new-password" minlength="6" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="signup-password-confirm">Confirm Password</label>
+          <input id="signup-password-confirm" type="password" placeholder="Re-type password" autocomplete="new-password" minlength="6" required />
+        </div>
+        <button type="submit" class="primary-btn auth-submit-btn">
+          <span>Create Tenant Account</span>
+          <svg viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="square"/></svg>
+        </button>
+        <div id="signup-error" class="error-banner hidden"></div>
       </form>
 
+      <!-- Email Verification Notice -->
       <div id="verify-notice" class="verify-notice hidden">
-        <svg viewBox="0 0 32 32" fill="none" class="verify-icon"><rect x="5" y="9" width="22" height="16" stroke="currentColor" stroke-width="1.6"/><path d="M6 10l10 8 10-8" stroke="currentColor" stroke-width="1.6" stroke-linecap="square"/></svg>
-        <h2>Check your email</h2>
-        <p class="muted">We sent a verification link to <span id="verify-email-addr"></span>. Click it, then come back and sign in.</p>
-        <button type="button" id="verify-back-btn" class="secondary">Back to sign in</button>
+        <div class="verify-icon-box">
+          <svg viewBox="0 0 32 32" fill="none" class="verify-icon"><rect x="5" y="9" width="22" height="16" stroke="currentColor" stroke-width="1.8"/><path d="M6 10l10 8 10-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/></svg>
+        </div>
+        <h2>Verify Your Email</h2>
+        <p class="muted">A secure verification confirmation was dispatched to <strong id="verify-email-addr"></strong>. Confirm the link, then sign in to your data lake.</p>
+        <button type="button" id="verify-back-btn" class="secondary">Return to Sign In</button>
       </div>
 
-      <p class="login-badges muted">Encrypted at rest &middot; Per-user isolation &middot; No ads</p>
+      <div class="login-badges">
+        <div class="security-pill">
+          <svg viewBox="0 0 16 16" fill="none"><path d="M8 2l5 2.5v4c0 3.5-2.5 6-5 7-2.5-1-5-3.5-5-7v-4L8 2z" stroke="currentColor" stroke-width="1.3"/></svg>
+          <span>End-to-End Encrypted</span>
+        </div>
+        <div class="security-pill">
+          <svg viewBox="0 0 16 16" fill="none"><path d="M2 13h12M4 10V6a4 4 0 018 0v4" stroke="currentColor" stroke-width="1.3"/></svg>
+          <span>Dedicated Tenant Vault</span>
+        </div>
+      </div>
     </div>
   </div>
 </div>
 
+<!-- Dashboard Screen -->
 <div id="app-screen" class="screen hidden">
   <header class="topbar">
-    <h1>MegaPool</h1>
+    <div class="topbar-brand">
+      <div class="topbar-symbol"></div>
+      <div class="topbar-title-wrap">
+        <span class="topbar-title">SoTaNik_AI</span>
+        <span class="topbar-badge">Data Lake</span>
+      </div>
+      <div class="lake-status-tag">
+        <span class="pulse-indicator"></span>
+        <span>Lake Active</span>
+      </div>
+    </div>
+
     <div class="topbar-right">
-      <span id="user-email-badge" class="user-badge"></span>
-      <button id="logout-btn" class="ghost icon-btn">
-        <svg viewBox="0 0 20 20" fill="none"><path d="M7 4H4v12h3M13 10H8m5 0l-2.5-2.5M13 10l-2.5 2.5M11 4h3v3M14 13v3h-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="square"/></svg>
-        Sign out
+      <div class="user-chip">
+        <span class="user-chip-label">TENANT:</span>
+        <span id="user-email-badge"></span>
+      </div>
+      <button id="logout-btn" class="ghost icon-btn" title="Sign out of Data Lake">
+        <svg viewBox="0 0 20 20" fill="none"><path d="M7 4H4v12h3M13 10H8m5 0l-2.5-2.5M13 10l-2.5 2.5M11 4h3v3M14 13v3h-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/></svg>
+        <span>Sign out</span>
       </button>
     </div>
   </header>
 
   <main>
+    <!-- Pool Overview Panel -->
     <section class="panel">
       <div class="panel-header">
-        <h2>Combined storage</h2>
-        <button id="add-account-btn" class="secondary icon-btn">
-          <svg viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="square"/></svg>
-          Add MEGA account
+        <div>
+          <div class="panel-category">INFRASTRUCTURE</div>
+          <h2>Distributed Storage Capacity</h2>
+        </div>
+        <button id="add-account-btn" class="primary-btn icon-btn">
+          <svg viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/></svg>
+          <span>Connect Storage Node</span>
         </button>
       </div>
-      <p class="muted">Accounts are permanent once added — there's no remove button by design, since files may have pieces stored on any account at any time. Only you can see or use the accounts you connect.</p>
+
+      <p class="panel-desc">
+        Storage nodes operate as an immutable, sharded virtual pool. High-capacity files are split across nodes automatically and reassembled seamlessly during streaming.
+      </p>
+
       <div class="pool-bar-wrap">
-        <div class="pool-bar"><div id="pool-bar-fill" class="pool-bar-fill"></div></div>
-        <div id="pool-summary-text" class="muted"></div>
+        <div class="pool-bar-metrics-row">
+          <span class="pool-metric-title">AGGREGATE POOL ALLOCATION</span>
+          <span id="pool-summary-text" class="pool-metric-val">Calculating lake capacity…</span>
+        </div>
+        <div class="pool-bar">
+          <div id="pool-bar-fill" class="pool-bar-fill"></div>
+        </div>
       </div>
+
+      <div class="nodes-section-title">ACTIVE STORAGE NODES</div>
       <div id="accounts-list" class="accounts-list">
         <div class="skeleton-card"></div>
         <div class="skeleton-card"></div>
@@ -141,31 +261,46 @@
       </div>
     </section>
 
+    <!-- Lake Objects Panel -->
     <section class="panel">
       <div class="panel-header">
-        <h2>Files</h2>
+        <div>
+          <div class="panel-category">STORAGE OBJECTS</div>
+          <h2>Data Lake Files</h2>
+        </div>
       </div>
 
+      <!-- Dropzone -->
       <div id="dropzone" class="dropzone">
-        <svg class="dropzone-icon" viewBox="0 0 40 40" fill="none">
-          <path d="M20 26V10M20 10l-6 6M20 10l6 6" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter"/>
-          <path d="M8 28v4h24v-4" stroke="currentColor" stroke-width="2" stroke-linecap="square"/>
-        </svg>
-        <p>Drag &amp; drop a file here, or</p>
-        <label class="secondary file-input-label">
-          Choose file
+        <div class="dropzone-icon-wrap">
+          <svg class="dropzone-icon" viewBox="0 0 40 40" fill="none">
+            <path d="M20 25V9M20 9l-6 6M20 9l6 6" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter"/>
+            <path d="M8 27v5h24v-5" stroke="currentColor" stroke-width="2" stroke-linecap="square"/>
+          </svg>
+        </div>
+        <div class="dropzone-title">Drop objects here to ingest into SoTaNik_AI Data Lake</div>
+        <p class="dropzone-sub">Supports large files with automated multi-node chunk sharding</p>
+        <label class="primary-btn file-input-label">
+          <span>Browse Local Files</span>
           <input id="file-input" type="file" hidden />
         </label>
         <div id="upload-progress-wrap" class="upload-progress-wrap hidden">
           <div class="upload-progress-bar"><div id="upload-progress-fill"></div></div>
-          <span id="upload-progress-text" class="muted"></span>
+          <span id="upload-progress-text" class="upload-status-text"></span>
         </div>
       </div>
 
+      <!-- Files Table -->
       <div id="files-table-wrap" class="files-table-wrap">
         <table class="files-table">
           <thead>
-            <tr><th>Name</th><th>Size</th><th>Spread across</th><th>Uploaded</th><th></th></tr>
+            <tr>
+              <th>Object Name</th>
+              <th>Size</th>
+              <th>Node Distribution</th>
+              <th>Ingested At</th>
+              <th class="text-right">Actions</th>
+            </tr>
           </thead>
           <tbody id="files-tbody">
             <tr class="skeleton-row"><td colspan="5"><div class="skeleton-line"></div></td></tr>
@@ -173,62 +308,94 @@
           </tbody>
         </table>
       </div>
+
       <div id="no-files-msg" class="files-empty hidden">
-        <svg viewBox="0 0 40 40" fill="none"><rect x="9" y="9" width="22" height="22" stroke="currentColor" stroke-width="2" stroke-dasharray="4 3"/></svg>
-        <p class="muted">No files yet — upload something above.</p>
+        <div class="empty-icon-wrap">
+          <svg viewBox="0 0 40 40" fill="none"><rect x="8" y="8" width="24" height="24" stroke="currentColor" stroke-width="1.8" stroke-dasharray="4 4"/><path d="M15 20h10M20 15v10" stroke="currentColor" stroke-width="1.6" stroke-linecap="square"/></svg>
+        </div>
+        <p class="empty-title">Data Lake is Empty</p>
+        <p class="empty-desc">Ingest your first dataset or object using the upload dropzone above.</p>
       </div>
     </section>
   </main>
 </div>
 
+<!-- Toast Container -->
 <div id="toast-container" class="toast-container" aria-live="polite"></div>
 
+<!-- Share Modal -->
 <div id="share-modal" class="modal hidden">
   <div class="modal-card">
-    <h2>Share file</h2>
+    <div class="modal-badge">OBJECT ACCESS</div>
+    <h2>Generate Public Share Link</h2>
+    
     <div id="share-modal-create">
-      <p class="muted">Anyone with this link can download the file — no login needed.</p>
-      <label class="muted" for="share-expiry">Link expires</label>
-      <select id="share-expiry">
-        <option value="never">Never</option>
-        <option value="1h">1 hour</option>
-        <option value="1d">1 day</option>
-        <option value="7d">7 days</option>
-        <option value="30d">30 days</option>
-      </select>
+      <p class="muted">Anyone in possession of this signed token URL can stream this object without authentication.</p>
+      <div class="form-group modal-field">
+        <label class="form-label" for="share-expiry">Link Validity Period</label>
+        <select id="share-expiry">
+          <option value="never">Permanent (Until Revoked)</option>
+          <option value="1h">1 Hour</option>
+          <option value="1d">24 Hours</option>
+          <option value="7d">7 Days</option>
+          <option value="30d">30 Days</option>
+        </select>
+      </div>
       <div class="modal-actions">
-        <button type="button" id="cancel-share" class="ghost">Cancel</button>
-        <button type="button" id="create-share-btn">Create link</button>
+        <button type="button" id="cancel-share" class="ghost">Dismiss</button>
+        <button type="button" id="create-share-btn" class="primary-btn">Generate Token Link</button>
       </div>
     </div>
+
     <div id="share-modal-result" class="hidden">
-      <p class="muted">Link ready:</p>
+      <p class="muted">Access URL Generated:</p>
       <div class="share-link-row">
         <input id="share-link-output" type="text" readonly />
-        <button type="button" id="copy-share-link" class="secondary">Copy</button>
+        <button type="button" id="copy-share-link" class="secondary">Copy URL</button>
       </div>
-      <p id="share-expiry-note" class="muted"></p>
+      <p id="share-expiry-note" class="share-expiry-indicator"></p>
       <div class="modal-actions">
-        <button type="button" id="revoke-share-btn" class="ghost danger-text">Revoke link</button>
-        <button type="button" id="close-share-modal">Done</button>
+        <button type="button" id="revoke-share-btn" class="ghost danger-text">Revoke Access Link</button>
+        <button type="button" id="close-share-modal" class="primary-btn">Close</button>
       </div>
     </div>
+
     <p id="share-modal-error" class="error hidden"></p>
   </div>
 </div>
 
+<!-- Add Storage Node Modal -->
 <div id="add-account-modal" class="modal hidden">
   <form id="add-account-form" class="modal-card">
-    <h2>Add a MEGA account</h2>
-    <p class="muted">Credentials are encrypted at rest and only used to talk to MEGA's API on your behalf.</p>
-    <input id="acc-label" placeholder="Label (e.g. acc1)" required />
-    <input id="acc-email" type="email" placeholder="MEGA account email" required autocomplete="off" />
-    <input id="acc-password" type="password" placeholder="MEGA account password" required autocomplete="off" />
-    <input id="acc-2fa" placeholder="2FA code (only if enabled)" autocomplete="off" />
+    <div class="modal-badge">NODE CLUSTERING</div>
+    <h2>Connect Storage Node</h2>
+    <p class="muted">Credentials are AES-256 encrypted at rest and utilized exclusively to bridge storage quota into SoTaNik_AI Data Lake.</p>
+    
+    <div class="form-group">
+      <label class="form-label" for="acc-label">Node Identifier</label>
+      <input id="acc-label" placeholder="e.g. node-primary, node-02" required />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="acc-email">Storage Account Email</label>
+      <input id="acc-email" type="email" placeholder="node-account@domain.com" required autocomplete="off" />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="acc-password">Account Password</label>
+      <input id="acc-password" type="password" placeholder="Account credential password" required autocomplete="off" />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="acc-2fa">2FA Authentication Token (If Enabled)</label>
+      <input id="acc-2fa" placeholder="6-digit TOTP code or leave blank" autocomplete="off" />
+    </div>
+
     <div class="modal-actions">
       <button type="button" id="cancel-add-account" class="ghost">Cancel</button>
-      <button type="submit">Connect account</button>
+      <button type="submit" class="primary-btn">Mount Storage Node</button>
     </div>
+    
     <p id="add-account-error" class="error hidden"></p>
   </form>
 </div>

@@ -16,7 +16,7 @@ async function login(email, password, secondFactorCode) {
   const options = {
     email,
     password,
-    userAgent: 'MegaPool/1.0',
+    userAgent: 'SoTaNik_AI-DataLake/1.0',
   };
   if (secondFactorCode) options.secondFactorCode = secondFactorCode;
   const storage = await new Storage(options).ready;
@@ -47,7 +47,7 @@ async function getSession(userId, label) {
   if (cached) return cached.storage;
 
   const account = await db.findAccount(userId, label);
-  if (!account) throw new Error(`Unknown MEGA account label "${label}".`);
+  if (!account) throw new Error(`Unknown storage account label "${label}".`);
 
   const storage = await login(account.email, decrypt(account.passwordEncrypted));
   sessions.set(key, { storage, quota: null, quotaAt: 0 });

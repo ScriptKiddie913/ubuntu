@@ -44,7 +44,7 @@ async function initSupabase() {
   try {
     res = await fetch('/api/auth/config');
   } catch (err) {
-    throw new Error('Could not reach the MegaPool server. Is it running?');
+    throw new Error('Could not reach the SoTaNik_AI Data Lake server. Is it running?');
   }
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
@@ -83,6 +83,7 @@ async function api(path, options = {}) {
 function switchScreen(id) {
   ['boot-screen', 'login-screen', 'app-screen'].forEach((s) => {
     const node = el(s);
+    if (!node) return;
     if (s === id) {
       node.classList.remove('hidden');
       node.classList.add('screen-in');
@@ -120,7 +121,7 @@ async function init() {
   try {
     await initSupabase();
   } catch (err) {
-    showBootError(err.message || 'Something went wrong while starting up.');
+    showBootError(err.message || 'Something went wrong while starting up SoTaNik_AI Data Lake.');
     return;
   }
 
@@ -151,17 +152,13 @@ function showAuthTab(which) {
   el('verify-notice').classList.add('hidden');
 
   const indicator = el('auth-tab-indicator');
-  const activeTab = isSignin ? el('tab-signin') : el('tab-signup');
-  indicator.style.width = `${activeTab.offsetWidth}px`;
-  indicator.style.transform = `translateX(${activeTab.offsetLeft}px)`;
+  if (indicator) {
+    indicator.style.transform = isSignin ? 'translateX(0%)' : 'translateX(100%)';
+  }
 }
 
 el('tab-signin').addEventListener('click', () => showAuthTab('signin'));
 el('tab-signup').addEventListener('click', () => showAuthTab('signup'));
-window.addEventListener('resize', () => {
-  const current = el('tab-signin').classList.contains('active') ? 'signin' : 'signup';
-  showAuthTab(current);
-});
 
 el('signin-form').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -202,9 +199,6 @@ el('signup-form').addEventListener('submit', async (e) => {
   }
 
   el('signup-form').reset();
-  // If email confirmations are enabled (the default and the recommended setting —
-  // see supabase/schema.sql / README), there's no active session yet: show the
-  // "check your email" notice instead of the forms.
   if (!data.session) {
     el('signin-form').classList.add('hidden');
     el('signup-form').classList.add('hidden');
@@ -220,7 +214,7 @@ el('logout-btn').addEventListener('click', async () => {
   showLogin();
 });
 
-// ---------- Accounts ----------
+// ---------- Storage Nodes (Accounts) ----------
 
 async function loadAccounts() {
   let summary;
@@ -233,14 +227,14 @@ async function loadAccounts() {
   const pct = summary.spaceTotal ? Math.min(100, (summary.spaceUsed / summary.spaceTotal) * 100) : 0;
   el('pool-bar-fill').style.width = `${pct}%`;
   el('pool-summary-text').textContent = summary.spaceTotal
-    ? `${formatBytes(summary.spaceUsed)} used of ${formatBytes(summary.spaceTotal)} combined (${summary.accounts.length} account${summary.accounts.length === 1 ? '' : 's'})`
-    : 'No accounts connected yet.';
+    ? `${formatBytes(summary.spaceUsed)} / ${formatBytes(summary.spaceTotal)} pooled (${summary.accounts.length} storage node${summary.accounts.length === 1 ? '' : 's'})`
+    : 'No storage nodes connected.';
 
   const list = el('accounts-list');
   list.innerHTML = '';
 
   if (summary.accounts.length === 0) {
-    list.innerHTML = `<div class="accounts-empty muted">No MEGA accounts connected yet — add one to start pooling storage.</div>`;
+    list.innerHTML = `<div class="accounts-empty muted">No storage nodes connected yet — connect a node to pool your distributed capacity.</div>`;
     return;
   }
 
@@ -253,9 +247,9 @@ async function loadAccounts() {
       <div class="acc-label">${escapeHtml(acc.label)}</div>
       ${
         acc.status === 'error'
-          ? `<div class="error">${escapeHtml(acc.error || 'connection error')}</div>`
+          ? `<div class="error">${escapeHtml(acc.error || 'Connection error')}</div>`
           : `<div class="mini-bar"><div class="mini-bar-fill" style="width:${accPct}%"></div></div>
-             <div class="muted">${formatBytes(acc.spaceUsed)} / ${formatBytes(acc.spaceTotal)}</div>`
+             <div class="muted">${formatBytes(acc.spaceUsed)} / ${formatBytes(acc.spaceTotal)} (${accPct.toFixed(1)}%)</div>`
       }
     `;
     list.appendChild(card);
@@ -270,7 +264,7 @@ el('add-account-form').addEventListener('submit', async (e) => {
   el('add-account-error').classList.add('hidden');
   const submitBtn = e.target.querySelector('button[type="submit"]');
   submitBtn.disabled = true;
-  submitBtn.textContent = 'Connecting…';
+  submitBtn.textContent = 'Mounting Node…';
   try {
     await api('/api/accounts', {
       method: 'POST',
@@ -283,23 +277,23 @@ el('add-account-form').addEventListener('submit', async (e) => {
     });
     el('add-account-form').reset();
     el('add-account-modal').classList.add('hidden');
-    toast('MEGA account connected.', 'success');
+    toast('Storage node connected successfully.', 'success');
     loadAccounts();
   } catch (err) {
     el('add-account-error').textContent = err.message;
     el('add-account-error').classList.remove('hidden');
   } finally {
     submitBtn.disabled = false;
-    submitBtn.textContent = 'Connect account';
+    submitBtn.textContent = 'Mount Storage Node';
   }
 });
 
 // ---------- Files ----------
 
-const downloadIcon = '<svg viewBox="0 0 16 16" fill="none"><path d="M8 2v8M8 10L5 7M8 10l3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="square"/><path d="M3 12.5h10" stroke="currentColor" stroke-width="1.4"/></svg>';
-const shareIcon = '<svg viewBox="0 0 16 16" fill="none"><circle cx="12" cy="4" r="1.6" stroke="currentColor" stroke-width="1.3"/><circle cx="4" cy="8" r="1.6" stroke="currentColor" stroke-width="1.3"/><circle cx="12" cy="12" r="1.6" stroke="currentColor" stroke-width="1.3"/><path d="M5.4 7.2l5.2-2.4M5.4 8.8l5.2 2.4" stroke="currentColor" stroke-width="1.2"/></svg>';
-const linkIcon = '<svg viewBox="0 0 16 16" fill="none"><path d="M6.5 9.5l3-3M6 5H4.5A2.5 2.5 0 002 7.5v0A2.5 2.5 0 004.5 10H6M10 5h1.5A2.5 2.5 0 0114 7.5v0A2.5 2.5 0 0111.5 10H10" stroke="currentColor" stroke-width="1.3" stroke-linecap="square"/></svg>';
-const trashIcon = '<svg viewBox="0 0 16 16" fill="none"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5V13h7V4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="square" stroke-linejoin="miter"/></svg>';
+const downloadIcon = '<svg viewBox="0 0 16 16" fill="none"><path d="M8 2v8M8 10L5 7M8 10l3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/><path d="M3 12.5h10" stroke="currentColor" stroke-width="1.5"/></svg>';
+const shareIcon = '<svg viewBox="0 0 16 16" fill="none"><circle cx="12" cy="4" r="1.6" stroke="currentColor" stroke-width="1.4"/><circle cx="4" cy="8" r="1.6" stroke="currentColor" stroke-width="1.4"/><circle cx="12" cy="12" r="1.6" stroke="currentColor" stroke-width="1.4"/><path d="M5.4 7.2l5.2-2.4M5.4 8.8l5.2 2.4" stroke="currentColor" stroke-width="1.3"/></svg>';
+const linkIcon = '<svg viewBox="0 0 16 16" fill="none"><path d="M6.5 9.5l3-3M6 5H4.5A2.5 2.5 0 002 7.5v0A2.5 2.5 0 004.5 10H6M10 5h1.5A2.5 2.5 0 0114 7.5v0A2.5 2.5 0 0111.5 10H10" stroke="currentColor" stroke-width="1.4" stroke-linecap="square"/></svg>';
+const trashIcon = '<svg viewBox="0 0 16 16" fill="none"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5V13h7V4.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="square" stroke-linejoin="miter"/></svg>';
 
 async function loadFiles() {
   let files;
@@ -320,17 +314,17 @@ async function loadFiles() {
     tr.className = 'row-in';
     const spread = f.accounts.map((a) => `<span class="chip">${escapeHtml(a)}</span>`).join('');
     const shareBtn = f.share
-      ? `<button data-id="${f.id}" class="share-btn link-btn icon-btn" title="Share link ready">${linkIcon}Link ready</button>`
-      : `<button data-id="${f.id}" class="share-btn secondary icon-btn" title="Create a share link">${shareIcon}Share</button>`;
+      ? `<button data-id="${f.id}" class="share-btn link-btn icon-btn" title="Share link ready">${linkIcon}<span>Link active</span></button>`
+      : `<button data-id="${f.id}" class="share-btn secondary icon-btn" title="Create a share link">${shareIcon}<span>Share</span></button>`;
     tr.innerHTML = `
       <td class="file-name-cell">${escapeHtml(f.name)}</td>
-      <td>${formatBytes(f.size)}</td>
-      <td>${spread}${f.chunkCount > f.accounts.length ? `<span class="chip">${f.chunkCount} parts</span>` : ''}</td>
+      <td><strong>${formatBytes(f.size)}</strong></td>
+      <td>${spread}${f.chunkCount > f.accounts.length ? `<span class="chip">${f.chunkCount} shards</span>` : ''}</td>
       <td>${new Date(f.createdAt).toLocaleString()}</td>
       <td class="actions">
         ${shareBtn}
-        <button data-id="${f.id}" class="dl-btn secondary icon-btn" title="Download">${downloadIcon}Download</button>
-        <button data-id="${f.id}" class="del-btn icon-btn" title="Delete">${trashIcon}Delete</button>
+        <button data-id="${f.id}" class="dl-btn secondary icon-btn" title="Download">${downloadIcon}<span>Download</span></button>
+        <button data-id="${f.id}" class="del-btn icon-btn" title="Delete">${trashIcon}<span>Delete</span></button>
       </td>
     `;
     tbody.appendChild(tr);
@@ -338,11 +332,9 @@ async function loadFiles() {
 
   tbody.querySelectorAll('.dl-btn').forEach((btn) => {
     btn.addEventListener('click', async () => {
-      // Downloads need the bearer token too, so we can't just navigate the browser
-      // to the URL — fetch it as a blob (ok for reasonably sized files) instead.
       const originalHtml = btn.innerHTML;
       btn.disabled = true;
-      btn.innerHTML = `${downloadIcon}Downloading…`;
+      btn.innerHTML = `${downloadIcon}<span>Streaming…</span>`;
       try {
         const token = await getAccessToken();
         const res = await fetch(`/api/files/${btn.dataset.id}/download`, {
@@ -369,12 +361,13 @@ async function loadFiles() {
       }
     });
   });
+
   tbody.querySelectorAll('.del-btn').forEach((btn) => {
     btn.addEventListener('click', async () => {
-      if (!confirm('Delete this file from the pool? This cannot be undone.')) return;
+      if (!confirm('Delete this object from SoTaNik_AI Data Lake? This cannot be undone.')) return;
       try {
         await api(`/api/files/${btn.dataset.id}`, { method: 'DELETE' });
-        toast('File deleted.', 'success');
+        toast('Object deleted from data lake.', 'success');
         loadFiles();
         loadAccounts();
       } catch (err) {
@@ -382,6 +375,7 @@ async function loadFiles() {
       }
     });
   });
+
   tbody.querySelectorAll('.share-btn').forEach((btn) => {
     btn.addEventListener('click', () => openShareModal(btn.dataset.id, files.find((f) => f.id === btn.dataset.id)));
   });
@@ -410,7 +404,7 @@ function showShareResult(url, expiresAt) {
   el('share-link-output').value = url;
   el('share-expiry-note').textContent = expiresAt
     ? `Expires ${new Date(expiresAt).toLocaleString()}`
-    : 'Never expires (until revoked).';
+    : 'Never expires (valid until revoked).';
 }
 
 function closeShareModal() {
@@ -448,12 +442,12 @@ el('copy-share-link').addEventListener('click', async () => {
     btn.textContent = 'Copied!';
     setTimeout(() => (btn.textContent = original), 1500);
   } catch {
-    // clipboard API may be blocked — the text is already selected for manual copy
+    // clipboard API fallback: text is selected for manual copy
   }
 });
 
 el('revoke-share-btn').addEventListener('click', async () => {
-  if (!confirm('Revoke this share link? It will stop working immediately.')) return;
+  if (!confirm('Revoke this access link? It will stop functioning immediately.')) return;
   try {
     await api(`/api/files/${currentShareFileId}/share`, { method: 'DELETE' });
     closeShareModal();
@@ -484,30 +478,25 @@ function uploadFile(file) {
       if (!e.lengthComputable) return;
       const pct = Math.round((e.loaded / e.total) * 100);
       fill.style.width = `${pct}%`;
-      text.textContent = `Uploading ${file.name}… ${pct}%`;
+      text.textContent = `Ingesting ${file.name}… ${pct}%`;
     });
     xhr.upload.addEventListener('load', () => {
-      // The browser has now finished sending the file, but the server still has
-      // to relay it into MEGA before it can respond — that leg has no per-byte
-      // progress we can show, so switch to an indeterminate state rather than
-      // leaving the bar frozen at 100% (which looks identical to "stuck" on a
-      // large file that can take several minutes to finish here).
       fill.style.width = '100%';
       fill.classList.add('indeterminate');
-      text.textContent = `${file.name} received — moving it into MEGA now (this can take a few minutes for larger files)…`;
+      text.textContent = `${file.name} received — committing shards to SoTaNik_AI Data Lake now…`;
     });
     xhr.onload = () => {
       wrap.classList.add('hidden');
       fill.classList.remove('indeterminate');
       if (xhr.status >= 200 && xhr.status < 300) {
-        toast(`${file.name} uploaded.`, 'success');
+        toast(`${file.name} ingested successfully.`, 'success');
         loadFiles();
         loadAccounts();
       } else {
         try {
-          toast(JSON.parse(xhr.responseText).error || 'Upload failed.', 'error');
+          toast(JSON.parse(xhr.responseText).error || 'Ingestion failed.', 'error');
         } catch {
-          toast('Upload failed.', 'error');
+          toast('Ingestion failed.', 'error');
         }
       }
     };
@@ -515,8 +504,7 @@ function uploadFile(file) {
       wrap.classList.add('hidden');
       fill.classList.remove('indeterminate');
       toast(
-        'Upload failed due to a network error. If this was a large file, it may have hit a connection timeout ' +
-          'partway through — try again on a faster/more stable connection.',
+        'Upload failed due to a network error. If this was a large file, it may have hit a connection timeout.',
         'error'
       );
     };
@@ -549,5 +537,5 @@ dropzone.addEventListener('drop', (e) => {
 
 init().catch((err) => {
   console.error('[boot] unexpected failure:', err);
-  showBootError(err.message || 'An unexpected error occurred while starting up.');
+  showBootError(err.message || 'An unexpected error occurred while starting up SoTaNik_AI Data Lake.');
 });

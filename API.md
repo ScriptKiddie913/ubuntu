@@ -1,18 +1,18 @@
-# MegaPool Database API — chunk access for external scanning
+# SoTaNik_AI Data Lake Database API — chunk access for external scanning
 
 This documents the `/api/db/*` endpoints, specifically the ones meant for an
 **external server** to pull raw data chunks and scan/index/search them itself,
-instead of relying on MegaPool's own (basic) built-in keyword search.
+instead of relying on SoTaNik_AI Data Lake's own built-in keyword search.
 
 Everything these endpoints serve — table data, the inverted index files, the
-catalog — lives on MEGA. Nothing here reads from or depends on a Postgres
+catalog — lives on the distributed storage lake. Nothing here reads from or depends on a Postgres
 table; Supabase is only involved in verifying who's making the request (the
 same auth used everywhere else in the app).
 
 ## Base URL
 
 ```
-https://<your-megapool-deployment>
+https://<your-sotanik-ai-data-lake-deployment>
 ```
 
 ## Authentication
@@ -38,14 +38,13 @@ curl -X POST 'https://YOUR-PROJECT-REF.supabase.co/auth/v1/token?grant_type=pass
 The response's `access_token` is what you pass as the Bearer token below.
 **It expires** (Supabase's default is 1 hour) — the response also includes a
 `refresh_token`; use Supabase's token refresh endpoint to get a new
-`access_token` without re-sending the password each time. A long-running
-external scanner should refresh proactively rather than wait for a 401.
+`access_token` without re-sending the password each time.
 
 ## Chunk sizing — the important part
 
 Table data is stored as **segments**, not one giant object. Each segment is
 capped at **`DB_SEGMENT_MAX_BYTES`, default 200MB** (set as an env var on the
-MegaPool server — call `GET /api/db/tables/:name/segments` and read
+server — call `GET /api/db/tables/:name/segments` and read
 `segmentMaxBytes` in the response rather than hardcoding 200MB, in case it's
 been configured differently on the deployment you're talking to). The **last**
 segment of a table is very likely smaller than the cap — always trust each
@@ -97,9 +96,7 @@ curl -H "Authorization: Bearer $TOKEN" \
 ### `GET /api/db/tables/:name/segments/:index/index`
 Downloads segment `:index`'s prebuilt inverted index (`token -> [[byteOffset,
 byteLength], ...]` into that same segment's data). Useful if you'd rather
-reuse MegaPool's own tokenization than rebuild your own from scratch — the
-offsets are byte offsets into the exact file `.../data` returns for that same
-segment index.
+reuse SoTaNik_AI Data Lake's own tokenization than rebuild your own from scratch.
 
 ### A full scan, end to end
 
@@ -125,8 +122,8 @@ your scanning server has the bandwidth for it.
 ## Other `/api/db` endpoints (not chunk-related, listed for completeness)
 
 - `POST /api/db/tables` `{ "name": "logs" }` — create a table
-- `DELETE /api/db/tables/:name` — delete a table and all its MEGA data
+- `DELETE /api/db/tables/:name` — delete a table and all its storage data
 - `POST /api/db/tables/:name/rows` `{ "rows": [ {...}, {...} ] }` — insert a small batch of rows directly
 - `POST /api/db/tables/:name/import` — multipart file upload (field name `file`), one row per line; starts a background job, returns `{ "jobId": "..." }` immediately (does not wait for the import to finish — large files can take a long time)
 - `GET /api/db/import-jobs/:jobId` — poll an import job's status: `{ "status": "running"|"done"|"error", "rowsProcessed": N, "segmentsWritten": N, "error": null|"..." }`
-- `GET /api/db/tables/:name/search?q=keyword&limit=50` — MegaPool's own basic built-in keyword search (exact/prefix token match), if you don't need to run your own external scan at all
+- `GET /api/db/tables/:name/search?q=keyword&limit=50` — SoTaNik_AI Data Lake's built-in keyword search (exact/prefix token match)
