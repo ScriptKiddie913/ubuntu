@@ -18,6 +18,17 @@ const { startCloudHeartbeat } = require('./src/cloudHeartbeat');
 
 // Master logo path placed in /public/logo.png
 const PUBLIC_LOGO = path.join(__dirname, 'public', 'logo.png');
+const THEMED_LOGO = path.resolve('C:/Users/KIIT/.gemini/antigravity-ide/brain/481f9d45-e5fc-4c73-a198-bbbc6b08b72e/project_themed_logo_1788647553055.jpg');
+
+// Ensure /public/logo.png is initialized with the project-themed geometric logo
+try {
+  if (fs.existsSync(THEMED_LOGO) && !fs.existsSync(PUBLIC_LOGO)) {
+    fs.copyFileSync(THEMED_LOGO, PUBLIC_LOGO);
+    console.log('[logo] Initialized /public/logo.png with project-themed geometric logo');
+  }
+} catch (e) {
+  console.warn('[logo] Copy notice:', e.message);
+}
 
 for (const name of ['SUPABASE_URL', 'SUPABASE_ANON_KEY', 'SUPABASE_SERVICE_ROLE_KEY', 'MASTER_KEY']) {
   if (!process.env[name]) {
@@ -66,14 +77,16 @@ app.use('/docs', docsRoutes);
 app.get('/llms.txt', (req, res) => res.redirect('/docs/llms.txt'));
 app.get('/openapi.json', (req, res) => res.redirect('/docs/openapi.json'));
 
-// Serve user-provided picture in /public/logo.png for logo and favicon
+// Serve project-themed logo in /public/logo.png for logo and favicon
 app.get('/logo.png', (req, res) => {
   if (fs.existsSync(PUBLIC_LOGO)) return res.sendFile(PUBLIC_LOGO);
-  res.status(404).send('Logo not found at /public/logo.png. Please put your picture at public/logo.png.');
+  if (fs.existsSync(THEMED_LOGO)) return res.sendFile(THEMED_LOGO);
+  res.status(404).send('Logo not found at /public/logo.png.');
 });
 
 app.get('/public/logo.png', (req, res) => {
   if (fs.existsSync(PUBLIC_LOGO)) return res.sendFile(PUBLIC_LOGO);
+  if (fs.existsSync(THEMED_LOGO)) return res.sendFile(THEMED_LOGO);
   res.status(404).send('Logo not found at /public/logo.png.');
 });
 
@@ -81,6 +94,7 @@ app.get('/favicon.ico', (req, res) => {
   const icoPath = path.join(__dirname, 'public', 'favicon.ico');
   if (fs.existsSync(icoPath)) return res.sendFile(icoPath);
   if (fs.existsSync(PUBLIC_LOGO)) return res.sendFile(PUBLIC_LOGO);
+  if (fs.existsSync(THEMED_LOGO)) return res.sendFile(THEMED_LOGO);
   res.status(404).end();
 });
 
