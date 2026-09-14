@@ -9,9 +9,22 @@ const { planPlacement } = require('../placement');
 const { sendFileDownload, isShareActive } = require('../fileStreamer');
 
 const router = express.Router();
-const CHUNK_MAX_BYTES = Number(process.env.CHUNK_MAX_BYTES) || 4 * 1024 * 1024 * 1024; // 4GB default
+const CHUNK_MAX_BYTES = Number(process.env.CHUNK_MAX_BYTES) || 100 * 1024 * 1024; // 100MB chunk default for distributed sharding & memory safety
 
 const EXPIRY_OPTIONS_HOURS = { '1h': 1, '1d': 24, '7d': 24 * 7, '30d': 24 * 30 }; // 'never' = no expiry
+
+// Ephemeral in-memory registry for chunked upload sessions
+const activeUploadSessions = new Map();
+
+// Periodic cleanup of stale upload sessions older than 2 hours
+setInterval(() => {
+  const now = Date.now();
+  for (const [id, session] of activeUploadSessions.entries()) {
+    if (now - session.createdAt > 2 * 60 * 60 * 1000) {
+      activeUploadSessions.delete(id);
+    }
+  }
+}, 30 * 60 * 1000).unref?.();
 
 // No fileSize limit set here on purpose — the pool's real ceiling is whatever the
 // connected MEGA accounts can hold, enforced later by planPlacement(), not an
@@ -66,6 +79,153 @@ router.get('/', async (req, res) => {
   }
 });
 
+// ============================================================================
+// High-Reliability Chunked Ingestion Pipeline (Handles 1GB+ files on Free Render)
+// ============================================================================
+
+// 1. Initialize Chunked Upload Session
+router.post('/init', async (req, res) => {
+  const { name, size } = req.body || {};
+  if (!name || typeof size !== 'number' || size < 0) {
+    return res.status(400).json({ error: 'Invalid file metadata (name and size are required).' });
+  }
+
+  try {
+    const summary = await megaAccounts.getPoolSummary(req.userId);
+    const plan = planPlacement(size, summary.accounts, CHUNK_MAX_BYTES);
+    const uploadId = nanoid(24);
+
+    activeUploadSessions.set(uploadId, {
+      uploadId,
+      userId: req.userId,
+      name,
+      size,
+      plan,
+      uploadedChunks: [],
+      createdAt: Date.now(),
+    });
+
+    res.json({
+      uploadId,
+      plan,
+      totalChunks: plan.length,
+    });
+  } catch (err) {
+    console.error('[upload/init] placement planning failed:', err.message);
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// 2. Ingest Single Chunk Shard
+router.post('/chunk', uploadMiddleware, async (req, res) => {
+  const { uploadId, partIndex } = req.body || {};
+  const partIdx = parseInt(partIndex, 10);
+
+  if (!uploadId || isNaN(partIdx) || !req.file) {
+    if (req.file) fs.unlink(req.file.path, () => {});
+    return res.status(400).json({ error: 'Missing uploadId, partIndex, or chunk file.' });
+  }
+
+  const session = activeUploadSessions.get(uploadId);
+  if (!session || session.userId !== req.userId) {
+    if (req.file) fs.unlink(req.file.path, () => {});
+    return res.status(404).json({ error: 'Upload session expired or not found.' });
+  }
+
+  const part = session.plan[partIdx - 1];
+  if (!part) {
+    if (req.file) fs.unlink(req.file.path, () => {});
+    return res.status(400).json({ error: `Invalid part index ${partIdx}.` });
+  }
+
+  const tmpPath = req.file.path;
+  const chunkName = session.plan.length === 1 ? session.name : `${session.name}.part${partIdx}`;
+
+  try {
+    const storage = await megaAccounts.getSession(session.userId, part.label);
+    let megaFile;
+
+    if (part.size === 0) {
+      megaFile = await storage.upload(chunkName, Buffer.alloc(0)).complete;
+    } else {
+      const uploadStream = storage.upload({ name: chunkName, size: part.size });
+      const readStream = fs.createReadStream(tmpPath);
+      readStream.pipe(uploadStream);
+      megaFile = await uploadStream.complete;
+    }
+
+    session.uploadedChunks.push({
+      label: part.label,
+      nodeId: megaFile.nodeId,
+      size: part.size,
+      part: partIdx,
+    });
+
+    res.json({ ok: true, partIndex: partIdx, label: part.label });
+  } catch (err) {
+    console.error(`[upload/chunk] part ${partIdx} upload to "${part.label}" failed:`, err);
+    res.status(500).json({ error: `Shard ${partIdx} commit failed on node "${part.label}": ${err.message}` });
+  } finally {
+    fs.unlink(tmpPath, () => {});
+  }
+});
+
+// 3. Finalize and Commit Ingestion Catalog
+router.post('/finalize', async (req, res) => {
+  const { uploadId } = req.body || {};
+  const session = activeUploadSessions.get(uploadId);
+
+  if (!session || session.userId !== req.userId) {
+    return res.status(404).json({ error: 'Upload session not found or expired.' });
+  }
+
+  if (session.uploadedChunks.length !== session.plan.length) {
+    return res.status(400).json({
+      error: `Incomplete upload: received ${session.uploadedChunks.length} of ${session.plan.length} planned shards.`,
+    });
+  }
+
+  try {
+    // Sort chunks in ascending part order
+    session.uploadedChunks.sort((a, b) => a.part - b.part);
+
+    const record = await db.insertFile(session.userId, {
+      id: nanoid(),
+      name: session.name,
+      size: session.size,
+      createdAt: new Date().toISOString(),
+      chunks: session.uploadedChunks,
+    });
+
+    activeUploadSessions.delete(uploadId);
+    res.status(201).json(toPublicRecord(record, req));
+  } catch (err) {
+    console.error('[upload/finalize] DB commit failed:', err);
+    res.status(500).json({ error: `Finalizing ingestion failed: ${err.message}` });
+  }
+});
+
+// 4. Abort / Clean up failed session
+router.post('/abort/:uploadId', async (req, res) => {
+  const { uploadId } = req.params;
+  const session = activeUploadSessions.get(uploadId);
+  if (!session || session.userId !== req.userId) {
+    return res.json({ ok: true });
+  }
+
+  for (const chunk of session.uploadedChunks) {
+    try {
+      const storage = await megaAccounts.getSession(session.userId, chunk.label);
+      const f = storage.files[chunk.nodeId];
+      if (f) await f.delete(true);
+    } catch (_) {}
+  }
+
+  activeUploadSessions.delete(uploadId);
+  res.json({ ok: true, aborted: true });
+});
+
+// Single-Shot Upload Route (Preserved for curl/API clients)
 router.post('/', uploadMiddleware, async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No file uploaded (form field name must be "file").' });

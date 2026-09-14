@@ -994,14 +994,15 @@ async function processUploadQueue(filesList) {
     const file = filesArray[i];
     fill.classList.remove('indeterminate');
     fill.style.width = '0%';
-    text.textContent = `[${i + 1}/${total}] Ingesting ${file.name}…`;
+    text.textContent = `[${i + 1}/${total}] Preparing ${file.name}…`;
 
     try {
-      await uploadSingleFile(file, (pct) => {
+      await uploadSingleFile(file, (pct, statusText) => {
         fill.style.width = `${pct}%`;
-        text.textContent = `[${i + 1}/${total}] Ingesting ${file.name}… ${pct}%`;
+        fill.classList.remove('indeterminate');
+        text.textContent = statusText || `[${i + 1}/${total}] Ingesting ${file.name}… ${pct}%`;
       });
-      toast(`[${i + 1}/${total}] ${file.name} ingested.`, 'success');
+      toast(`[${i + 1}/${total}] ${file.name} ingested successfully.`, 'success');
       recordAuditLog('INGEST', `Ingested: ${file.name} (${formatBytes(file.size)})`);
     } catch (err) {
       toast(`Upload failed for ${file.name}: ${err.message}`, 'error');
@@ -1014,9 +1015,13 @@ async function processUploadQueue(filesList) {
   loadAccounts();
 }
 
-function uploadSingleFile(file, onProgress) {
-  return new Promise((resolve, reject) => {
-    getAccessToken().then((token) => {
+async function uploadSingleFile(file, onProgress) {
+  const token = await getAccessToken();
+  const authHeaders = token ? { 'Authorization': `Bearer ${token}` } : {};
+
+  // For small files (< 20MB), use single-shot upload
+  if (file.size < 20 * 1024 * 1024) {
+    return new Promise((resolve, reject) => {
       const formData = new FormData();
       formData.append('file', file);
 
@@ -1027,14 +1032,11 @@ function uploadSingleFile(file, onProgress) {
       xhr.upload.addEventListener('progress', (e) => {
         if (!e.lengthComputable) return;
         const pct = Math.round((e.loaded / e.total) * 100);
-        onProgress(pct);
+        onProgress(pct, `Uploading ${file.name}… ${pct}%`);
       });
 
       xhr.upload.addEventListener('load', () => {
-        const fill = el('upload-progress-fill');
-        fill.style.width = '100%';
-        fill.classList.add('indeterminate');
-        el('upload-progress-text').textContent = `Committing shards for ${file.name} to lake nodes…`;
+        onProgress(100, `Committing ${file.name} to lake nodes…`);
       });
 
       xhr.onload = () => {
@@ -1051,7 +1053,66 @@ function uploadSingleFile(file, onProgress) {
       xhr.onerror = () => reject(new Error('Network connection error during transfer.'));
       xhr.send(formData);
     });
+  }
+
+  // For large files (20MB to 10GB+), use the resilient chunked ingestion pipeline:
+  // Uploads in 100MB shards, eliminating Render 100s proxy timeouts and RAM exhaustion!
+  const initRes = await fetch('/api/files/init', {
+    method: 'POST',
+    headers: { ...authHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: file.name, size: file.size }),
   });
+
+  if (!initRes.ok) {
+    const err = await initRes.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to initialize upload session.');
+  }
+
+  const { uploadId, plan, totalChunks } = await initRes.json();
+  let offset = 0;
+
+  for (let partIdx = 1; partIdx <= totalChunks; partIdx++) {
+    const part = plan[partIdx - 1];
+    const chunkBlob = file.slice(offset, offset + part.size);
+    offset += part.size;
+
+    const basePct = Math.round(((partIdx - 1) / totalChunks) * 100);
+    onProgress(basePct, `Uploading shard ${partIdx}/${totalChunks} to "${part.label}" (${basePct}%)…`);
+
+    const formData = new FormData();
+    formData.append('uploadId', uploadId);
+    formData.append('partIndex', String(partIdx));
+    formData.append('file', chunkBlob, `${file.name}.part${partIdx}`);
+
+    const chunkRes = await fetch('/api/files/chunk', {
+      method: 'POST',
+      headers: authHeaders,
+      body: formData,
+    });
+
+    if (!chunkRes.ok) {
+      const err = await chunkRes.json().catch(() => ({}));
+      fetch(`/api/files/abort/${uploadId}`, { method: 'POST', headers: authHeaders }).catch(() => {});
+      throw new Error(err.error || `Failed uploading shard ${partIdx} of ${file.name}`);
+    }
+
+    const currentPct = Math.round((partIdx / totalChunks) * 100);
+    onProgress(currentPct, `Committed shard ${partIdx}/${totalChunks} to "${part.label}" (${currentPct}%)…`);
+  }
+
+  onProgress(100, `Assembling lake shards for ${file.name}…`);
+  const finalizeRes = await fetch('/api/files/finalize', {
+    method: 'POST',
+    headers: { ...authHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ uploadId }),
+  });
+
+  if (!finalizeRes.ok) {
+    const err = await finalizeRes.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to finalize lake upload.');
+  }
+
+  return await finalizeRes.json();
 }
 
 el('file-input').addEventListener('change', (e) => {
