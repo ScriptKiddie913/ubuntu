@@ -67,7 +67,11 @@ router.post('/', async (req, res) => {
     });
   } catch (err) {
     console.error('[api-keys] Error generating key:', err.message);
-    res.status(500).json({ error: `Could not generate API key: ${err.message}` });
+    const isMissingTable = err.message && (err.message.includes('api_keys') || err.message.includes('42P01'));
+    const message = isMissingTable
+      ? 'Database table "api_keys" does not exist. Please run supabase/schema.sql in your Supabase SQL Editor.'
+      : `Could not generate API key: ${err.message}`;
+    res.status(500).json({ error: message });
   }
 });
 
