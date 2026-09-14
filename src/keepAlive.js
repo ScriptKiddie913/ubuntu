@@ -71,8 +71,8 @@ function startKeepAlive() {
   }
 
   console.log(`[anti-sleep] Anti-sleep engine active. Ping target: ${pingUrl} every ${PING_INTERVAL_MS / 60000} minutes.`);
-  setTimeout(performPing, INITIAL_PING_DELAY_MS);
-  setInterval(performPing, PING_INTERVAL_MS);
+  setTimeout(performPing, INITIAL_PING_DELAY_MS).unref();
+  setInterval(performPing, PING_INTERVAL_MS).unref();
 }
 
 module.exports = { startKeepAlive };

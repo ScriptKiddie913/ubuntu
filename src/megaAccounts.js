@@ -47,7 +47,31 @@ async function getSession(userId, label) {
 
   if (!account) throw new Error(`Unknown storage node identifier "${label}".`);
 
-  const storage = await login(account.email, decrypt(account.passwordEncrypted));
+  let decryptedPassword;
+  try {
+    decryptedPassword = decrypt(account.passwordEncrypted);
+  } catch (err) {
+    // This typically means MASTER_KEY changed since the password was encrypted.
+    // Clear any stale cache and give a clear message.
+    sessions.delete(key);
+    throw new Error(
+      `Cannot decrypt credentials for node "${label}". ` +
+      `This usually means the MASTER_KEY environment variable changed since this node was added. ` +
+      `Re-add the node with the current key, or restore the original MASTER_KEY. (${err.message})`
+    );
+  }
+
+  let storage;
+  try {
+    storage = await login(account.email, decryptedPassword);
+  } catch (err) {
+    // Clear any stale cached session so the next call doesn't return a broken object
+    sessions.delete(key);
+    throw new Error(
+      `Failed to connect to storage node "${label}" (${account.email}): ${err.message}`
+    );
+  }
+
   sessions.set(key, { storage, quota: null, quotaAt: 0 });
   return storage;
 }

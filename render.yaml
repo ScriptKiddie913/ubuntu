@@ -13,7 +13,7 @@ services:
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
       - key: MASTER_KEY
-        generateValue: true
+        sync: false
       - key: CHUNK_MAX_BYTES
         value: "4294967296"
       - key: NODE_ENV

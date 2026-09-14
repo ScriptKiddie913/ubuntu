@@ -349,7 +349,8 @@ async function loadAccounts() {
       </div>
       ${
         acc.status === 'error'
-          ? `<div class="error" style="font-size:11.5px;">${escapeHtml(acc.error || 'Connection error')}</div>`
+          ? `<div class="error" style="font-size:11.5px;">${escapeHtml(acc.error || 'Connection error')}</div>
+             <button class="secondary btn-xs reconnect-node-btn" data-node-label="${escapeHtml(acc.label)}" style="margin-top:6px;width:100%;font-size:11px;padding:4px 8px;">⟳ Reconnect Node</button>`
           : `<div class="mini-bar"><div class="mini-bar-fill" style="width:${accPct}%"></div></div>
              <div class="node-card-footer">
                <span>${formatBytes(acc.spaceUsed)} / ${formatBytes(acc.spaceTotal)}</span>
@@ -359,11 +360,35 @@ async function loadAccounts() {
     `;
 
     // Feature 10: Click to Filter Files by Node
-    card.addEventListener('click', () => {
+    card.addEventListener('click', (e) => {
+      // Don't filter when clicking the reconnect button
+      if (e.target.closest('.reconnect-node-btn')) return;
       toggleNodeFilter(acc.label);
     });
 
     list.appendChild(card);
+  });
+
+  // Wire Reconnect Buttons
+  list.querySelectorAll('.reconnect-node-btn').forEach((btn) => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const label = btn.getAttribute('data-node-label');
+      const origText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Reconnecting…';
+      try {
+        await api(`/api/accounts/${encodeURIComponent(label)}/reconnect`, { method: 'POST' });
+        toast(`Node "${label}" reconnected successfully.`, 'success');
+        recordAuditLog('NODE', `Reconnected storage node: ${label}`);
+        loadAccounts();
+      } catch (err) {
+        toast(`Reconnect failed for "${label}": ${err.message}`, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = origText;
+      }
+    });
   });
 }
 

@@ -29,10 +29,15 @@ async function pingSingleAccount(email, password) {
     userAgent: 'SoTaNik_AI-DataLake-Heartbeat/2.0',
   }).ready;
 
-  const info = await storage.getAccountInfo();
-  // Read root file count to register API activity
-  const fileCount = Object.keys(storage.files || {}).length;
-  return { info, fileCount };
+  try {
+    const info = await storage.getAccountInfo();
+    // Read root file count to register API activity
+    const fileCount = Object.keys(storage.files || {}).length;
+    return { info, fileCount };
+  } finally {
+    // Release the MEGA connection to avoid leaking event listeners and sockets
+    try { storage.close(); } catch (_) { /* best-effort cleanup */ }
+  }
 }
 
 async function runCloudHeartbeat() {
